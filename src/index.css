@@ -2,6 +2,148 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ═══════════════════════════════════════════
+   MORAL TRADEOFF DASHBOARD — DESIGN SYSTEM
+   Observatory meets Ethics Lab
+   ═══════════════════════════════════════════ */
+
+@layer base {
+  :root {
+    /* Core surfaces — deep observatory slate */
+    --background: 222 28% 7%;
+    --foreground: 215 25% 88%;
+
+    --card: 220 24% 10%;
+    --card-foreground: 215 25% 88%;
+
+    --popover: 220 24% 10%;
+    --popover-foreground: 215 25% 88%;
+
+    /* Primary — amber oracle glow */
+    --primary: 43 95% 62%;
+    --primary-foreground: 222 28% 7%;
+
+    /* Secondary — cool slate */
+    --secondary: 218 22% 16%;
+    --secondary-foreground: 215 25% 72%;
+
+    --muted: 220 20% 13%;
+    --muted-foreground: 215 18% 48%;
+
+    --accent: 210 85% 62%;
+    --accent-foreground: 222 28% 7%;
+
+    --destructive: 4 72% 56%;
+    --destructive-foreground: 215 25% 95%;
+
+    --border: 218 22% 16%;
+    --input: 218 22% 16%;
+    --ring: 43 95% 62%;
+
+    --radius: 0.625rem;
+
+    /* ── Impact dimension colors ── */
+    --positive: 166 70% 50%;
+    --positive-glow: 166 70% 50% / 0.18;
+    --negative: 4 72% 56%;
+    --negative-glow: 4 72% 56% / 0.18;
+    --neutral: 210 50% 58%;
+    --warning: 43 95% 62%;
+    --warning-glow: 43 95% 62% / 0.15;
+
+    /* ── Dimension palette ── */
+    --dim-environment: 166 68% 48%;
+    --dim-economy: 43 95% 62%;
+    --dim-wellbeing: 280 60% 65%;
+    --dim-culture: 25 90% 60%;
+    --dim-equity: 199 80% 58%;
+    --dim-longterm: 315 55% 62%;
+
+    /* ── Gradients ── */
+    --gradient-surface: linear-gradient(135deg, hsl(222 28% 8%), hsl(218 28% 11%));
+    --gradient-card: linear-gradient(145deg, hsl(220 24% 11%), hsl(218 20% 9%));
+    --gradient-amber: linear-gradient(135deg, hsl(43 95% 62%), hsl(35 90% 55%));
+    --gradient-hero: linear-gradient(160deg, hsl(222 32% 10%) 0%, hsl(218 30% 8%) 60%, hsl(215 28% 7%) 100%);
+
+    /* ── Typography ── */
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+    /* ── Shadows ── */
+    --shadow-card: 0 4px 24px -4px hsl(222 40% 4% / 0.6);
+    --shadow-glow-amber: 0 0 32px hsl(43 95% 62% / 0.2), 0 0 8px hsl(43 95% 62% / 0.12);
+    --shadow-glow-positive: 0 0 28px hsl(166 70% 50% / 0.18);
+    --shadow-glow-negative: 0 0 28px hsl(4 72% 56% / 0.18);
+
+    /* sidebar */
+    --sidebar-background: 222 28% 7%;
+    --sidebar-foreground: 215 25% 88%;
+    --sidebar-primary: 43 95% 62%;
+    --sidebar-primary-foreground: 222 28% 7%;
+    --sidebar-accent: 220 24% 10%;
+    --sidebar-accent-foreground: 215 25% 88%;
+    --sidebar-border: 218 22% 16%;
+    --sidebar-ring: 43 95% 62%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    background: hsl(var(--background));
+  }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--background)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* ── Glow pulse animation ── */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scan-line {
+  0% { transform: translateY(-100%); }
+  100% { transform: translateY(400%); }
+}
+
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-float-up { animation: float-up 0.5s ease-out forwards; }
+
+/* ── Grid pattern overlay ── */
+.grid-overlay {
+  background-image: 
+    linear-gradient(hsl(210 50% 58% / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(210 50% 58% / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+
 /* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
 All colors MUST be HSL.
 */
