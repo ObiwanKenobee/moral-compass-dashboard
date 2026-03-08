@@ -2,95 +2,88 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
+
+/* ═══════════════════════════════════════════
+   MORAL TRADEOFF DASHBOARD — DESIGN SYSTEM
+   Observatory meets Ethics Lab
+   ═══════════════════════════════════════════ */
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core surfaces — deep observatory slate */
+    --background: 222 28% 7%;
+    --foreground: 215 25% 88%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 220 24% 10%;
+    --card-foreground: 215 25% 88%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 24% 10%;
+    --popover-foreground: 215 25% 88%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    /* Primary — amber oracle glow */
+    --primary: 43 95% 62%;
+    --primary-foreground: 222 28% 7%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    /* Secondary — cool slate */
+    --secondary: 218 22% 16%;
+    --secondary-foreground: 215 25% 72%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 20% 13%;
+    --muted-foreground: 215 18% 48%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 210 85% 62%;
+    --accent-foreground: 222 28% 7%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 4 72% 56%;
+    --destructive-foreground: 215 25% 95%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 218 22% 16%;
+    --input: 218 22% 16%;
+    --ring: 43 95% 62%;
 
-    --radius: 0.5rem;
+    --radius: 0.625rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* ── Impact dimension colors ── */
+    --positive: 166 70% 50%;
+    --negative: 4 72% 56%;
+    --neutral: 210 50% 58%;
+    --warning: 43 95% 62%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* ── Dimension palette ── */
+    --dim-environment: 166 68% 48%;
+    --dim-economy: 43 95% 62%;
+    --dim-wellbeing: 280 60% 65%;
+    --dim-culture: 25 90% 60%;
+    --dim-equity: 199 80% 58%;
+    --dim-longterm: 315 55% 62%;
 
-    --sidebar-primary: 240 5.9% 10%;
+    /* ── Gradients ── */
+    --gradient-surface: linear-gradient(135deg, hsl(222 28% 8%), hsl(218 28% 11%));
+    --gradient-card: linear-gradient(145deg, hsl(220 24% 11%), hsl(218 20% 9%));
+    --gradient-amber: linear-gradient(135deg, hsl(43 95% 62%), hsl(35 90% 55%));
+    --gradient-hero: linear-gradient(160deg, hsl(222 32% 10%) 0%, hsl(218 30% 8%) 60%, hsl(215 28% 7%) 100%);
 
-    --sidebar-primary-foreground: 0 0% 98%;
+    /* ── Typography ── */
+    --font-display: 'Playfair Display', Georgia, serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 
-    --sidebar-accent: 240 4.8% 95.9%;
+    /* ── Shadows ── */
+    --shadow-card: 0 4px 24px -4px hsl(222 40% 4% / 0.6);
+    --shadow-glow-amber: 0 0 32px hsl(43 95% 62% / 0.2), 0 0 8px hsl(43 95% 62% / 0.12);
+    --shadow-glow-positive: 0 0 28px hsl(166 70% 50% / 0.18);
+    --shadow-glow-negative: 0 0 28px hsl(4 72% 56% / 0.18);
 
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* sidebar */
+    --sidebar-background: 222 28% 7%;
+    --sidebar-foreground: 215 25% 88%;
+    --sidebar-primary: 43 95% 62%;
+    --sidebar-primary-foreground: 222 28% 7%;
+    --sidebar-accent: 220 24% 10%;
+    --sidebar-accent-foreground: 215 25% 88%;
+    --sidebar-border: 218 22% 16%;
+    --sidebar-ring: 43 95% 62%;
   }
 }
 
@@ -99,7 +92,45 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
+  html {
+    color-scheme: dark;
+  }
+
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    background: hsl(var(--background));
   }
+
+  h1, h2, h3 {
+    font-family: var(--font-display);
+  }
+}
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: hsl(var(--background)); }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: hsl(var(--muted-foreground)); }
+
+/* ── Glow pulse animation ── */
+@keyframes glow-pulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+@keyframes float-up {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-float-up { animation: float-up 0.5s ease-out forwards; }
+
+/* ── Grid pattern overlay ── */
+.grid-overlay {
+  background-image: 
+    linear-gradient(hsl(210 50% 58% / 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, hsl(210 50% 58% / 0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
 }
