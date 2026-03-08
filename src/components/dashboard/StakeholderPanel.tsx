@@ -4,7 +4,6 @@ import { DIMENSIONS } from "@/data/decisions";
 
 interface StakeholderPanelProps {
   stakeholders: StakeholderImpact[];
-  activeTimeframeDimensions: Record<string, number>;
 }
 
 function getNetImpact(impacts: Record<string, number>): number {
