@@ -1,11 +1,17 @@
 import { useState } from "react";
 import { DIMENSIONS } from "@/data/decisions";
-import { RotateCcw, X } from "lucide-react";
+import { SaveDialog } from "./SavedScenarios";
+import type { SavedScenario } from "./SavedScenarios";
+import { RotateCcw, X, Bookmark } from "lucide-react";
 
 interface WeightMatrixProps {
   dimensions: Record<string, number>;
   onWeightsChange: (weights: Record<string, number>) => void;
   onClose: () => void;
+  decisionId: string;
+  decisionTitle: string;
+  timeframeLabel: string;
+  onSave: (scenario: Omit<SavedScenario, "id" | "createdAt">) => void;
 }
 
 const DEFAULT_WEIGHTS: Record<string, number> = {
@@ -42,8 +48,9 @@ function getWeightColor(w: number): string {
   return "hsl(var(--negative))";
 }
 
-export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMatrixProps) {
+export function WeightMatrix({ dimensions, onWeightsChange, onClose, decisionId, decisionTitle, timeframeLabel, onSave }: WeightMatrixProps) {
   const [weights, setWeights] = useState<Record<string, number>>({ ...DEFAULT_WEIGHTS });
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const handleChange = (key: string, val: number) => {
     const newWeights = { ...weights, [key]: val };
@@ -56,7 +63,6 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
     onWeightsChange({ ...DEFAULT_WEIGHTS });
   };
 
-  // Calculate weighted net
   const weightedNet = (() => {
     let sum = 0;
     let totalWeight = 0;
@@ -69,6 +75,7 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
   })();
 
   const uniformNet = Math.round(Object.values(dimensions).reduce((a, b) => a + b, 0) / 6);
+  const hasCustomWeights = DIMENSIONS.some((d) => weights[d.key] !== 1);
 
   function netColor(v: number) {
     if (v >= 20) return "hsl(var(--positive))";
@@ -76,24 +83,42 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
     return "hsl(var(--negative))";
   }
 
-  const hasCustomWeights = DIMENSIONS.some((d) => weights[d.key] !== 1);
+  function handleSave(name: string) {
+    onSave({
+      name,
+      type: "weights",
+      decisionId,
+      decisionTitle,
+      timeframeLabel,
+      dimensions: { ...dimensions },
+      weights: { ...weights },
+    });
+    setShowSaveDialog(false);
+  }
 
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden animate-float-up" style={{ boxShadow: "var(--shadow-card)" }}>
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30">
-        <div className="flex items-center gap-2">
-          <p className="font-mono text-xs tracking-widest uppercase text-primary">⚖ Decision Weight Matrix</p>
-        </div>
+        <p className="font-mono text-xs tracking-widest uppercase text-primary">⚖ Decision Weight Matrix</p>
         <div className="flex items-center gap-2">
           {hasCustomWeights && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border hover:border-secondary"
-            >
-              <RotateCcw size={10} />
-              Reset
-            </button>
+            <>
+              <button
+                onClick={() => setShowSaveDialog((v) => !v)}
+                className="flex items-center gap-1 text-[10px] font-mono text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded border border-primary/30 hover:border-primary/60"
+              >
+                <Bookmark size={10} />
+                Save
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border hover:border-secondary"
+              >
+                <RotateCcw size={10} />
+                Reset
+              </button>
+            </>
           )}
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
             <X size={16} />
@@ -101,12 +126,17 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
         </div>
       </div>
 
+      {showSaveDialog && (
+        <div className="px-5 pt-3">
+          <SaveDialog onSave={handleSave} onCancel={() => setShowSaveDialog(false)} />
+        </div>
+      )}
+
       <div className="p-5 space-y-5">
         <p className="text-xs font-mono text-muted-foreground">
           Assign personal importance weights to each dimension. The dashboard recalculates a weighted net impact reflecting your values.
         </p>
 
-        {/* Weight sliders */}
         <div className="space-y-4">
           {DIMENSIONS.map((dim) => {
             const w = weights[dim.key] ?? 1;
@@ -150,7 +180,6 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
           })}
         </div>
 
-        {/* Result comparison */}
         <div className="bg-muted/30 rounded-lg p-4 grid grid-cols-3 gap-4">
           <div className="text-center">
             <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-1">Uniform Net</p>
@@ -182,7 +211,6 @@ export function WeightMatrix({ dimensions, onWeightsChange, onClose }: WeightMat
           </div>
         </div>
 
-        {/* Weight distribution visual */}
         <div>
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider mb-2">Weight Distribution</p>
           <div className="flex h-3 rounded-full overflow-hidden gap-px">

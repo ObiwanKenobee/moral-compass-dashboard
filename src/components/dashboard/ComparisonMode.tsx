@@ -18,7 +18,7 @@ function DimRow({ label, icon, valA, valB }: { label: string; icon: string; valA
     return "hsl(var(--negative))";
   }
   return (
-    <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center py-1.5 border-b border-border/40">
+    <div className="grid grid-cols-[1fr_72px_72px_56px] gap-2 items-center py-1.5 border-b border-border/40">
       <span className="text-xs font-mono text-muted-foreground">{icon} {label}</span>
       <span className="text-xs font-mono font-bold text-right" style={{ color: color(valA) }}>
         {valA > 0 ? "+" : ""}{valA}
@@ -66,8 +66,8 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
       </div>
 
       <div className="p-5 space-y-5">
-        {/* Decision pickers row */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Decision pickers — stack on mobile, side-by-side on desktop */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {/* Dilemma A */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -78,7 +78,6 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
               <p className="text-sm font-semibold font-display text-foreground">{primaryDecision.title}</p>
               <p className="text-xs text-muted-foreground font-mono mt-0.5">{primaryDecision.subtitle}</p>
             </div>
-            {/* Timeframe selector A */}
             <div className="flex gap-1">
               {primaryDecision.timeframes.map((tf, i) => (
                 <button
@@ -116,7 +115,6 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
                 </option>
               ))}
             </select>
-            {/* Timeframe selector B */}
             <div className="flex gap-1">
               {compareDecision.timeframes.map((tf, i) => (
                 <button
@@ -135,11 +133,11 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
           </div>
         </div>
 
-        {/* Radar comparison */}
-        <div className="grid grid-cols-2 gap-4">
+        {/* Radar comparison — stack on mobile */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="bg-muted/30 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono text-primary uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-primary uppercase tracking-wider truncate max-w-[60%]">
                 {primaryDecision.title.substring(0, 22)}…
               </span>
               <span className="text-sm font-mono font-bold" style={{ color: netColor(netA) }}>
@@ -150,7 +148,7 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
           </div>
           <div className="bg-muted/30 rounded-lg p-3">
             <div className="flex items-center justify-between mb-2">
-              <span className="text-[10px] font-mono text-accent uppercase tracking-wider">
+              <span className="text-[10px] font-mono text-accent uppercase tracking-wider truncate max-w-[60%]">
                 {compareDecision.title.substring(0, 22)}…
               </span>
               <span className="text-sm font-mono font-bold" style={{ color: netColor(netB) }}>
@@ -163,7 +161,7 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
 
         {/* Dimension-by-dimension table */}
         <div className="bg-muted/20 rounded-lg p-4">
-          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 mb-2">
+          <div className="grid grid-cols-[1fr_72px_72px_56px] gap-2 mb-2">
             <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Dimension</span>
             <span className="text-[10px] font-mono text-primary uppercase tracking-wider text-right">A</span>
             <span className="text-[10px] font-mono text-accent uppercase tracking-wider text-right">B</span>
@@ -178,8 +176,7 @@ export function ComparisonMode({ primaryDecision, onClose }: ComparisonModeProps
               valB={tfB.dimensions[dim.key] ?? 0}
             />
           ))}
-          {/* Net row */}
-          <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 items-center pt-2 mt-1">
+          <div className="grid grid-cols-[1fr_72px_72px_56px] gap-2 items-center pt-2 mt-1">
             <span className="text-[10px] font-mono text-foreground uppercase tracking-wider font-bold">Net Average</span>
             <span className="text-sm font-mono font-bold text-right" style={{ color: netColor(netA) }}>
               {netA > 0 ? "+" : ""}{netA}
