@@ -217,7 +217,6 @@ export default function Index() {
               </p>
               <StakeholderPanel
                 stakeholders={selected.stakeholders}
-                activeTimeframeDimensions={currentTimeframe.dimensions}
               />
             </div>
 
