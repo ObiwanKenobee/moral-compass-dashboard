@@ -406,4 +406,87 @@ export const DECISIONS: Decision[] = [
       },
     ],
   },
+  {
+    id: "ubi",
+    title: "Universal Basic Income Rollout",
+    subtitle: "Unconditional monthly stipend for all citizens",
+    context:
+      "A national UBI program would provide every adult citizen $1,200/month unconditionally, funded by a 2% wealth tax, VAT increase, and automation dividend. Projected to eliminate absolute poverty for 38 million people, cost 14% of GDP annually, and restructure the relationship between labor, identity, and economic participation.",
+    region: "North America",
+    scale: "National",
+    moralWeight: 79,
+    irreversibilityScore: 42,
+    uncertaintyScore: 74,
+    keyTension:
+      "Eradicating poverty and freeing human potential vs. fiscal sustainability, labor market disruption, and cultural redefinition of work as moral obligation",
+    historicalAnalogues: [
+      "Alaska Permanent Fund (1982–present)",
+      "Finland UBI Pilot (2017–2018)",
+      "Stockton SEED experiment (2019)",
+    ],
+    timeframes: [
+      {
+        label: "Immediate",
+        years: "0–5 years",
+        dimensions: {
+          environment: 5,
+          economy: -30,
+          wellbeing: 65,
+          culture: -15,
+          equity: 70,
+          longterm: -10,
+        },
+      },
+      {
+        label: "Short-Term",
+        years: "5–20 years",
+        dimensions: {
+          environment: 15,
+          economy: 20,
+          wellbeing: 75,
+          culture: -25,
+          equity: 80,
+          longterm: 20,
+        },
+      },
+      {
+        label: "Long-Term",
+        years: "20–60 years",
+        dimensions: {
+          environment: 25,
+          economy: 45,
+          wellbeing: 80,
+          culture: -35,
+          equity: 85,
+          longterm: 55,
+        },
+      },
+    ],
+    stakeholders: [
+      {
+        stakeholder: "Low-Income Households",
+        description: "38 million people living below the poverty line",
+        impacts: { environment: 10, economy: 75, wellbeing: 90, culture: 20, equity: 95, longterm: 65 },
+        quote: "For the first time in my life, I can say no to a job that exploits me. That is dignity.",
+      },
+      {
+        stakeholder: "Small Business Owners",
+        description: "Entrepreneurs and employers in labor-intensive sectors",
+        impacts: { environment: 5, economy: -35, wellbeing: 15, culture: -20, equity: 25, longterm: 30 },
+        quote: "Workers can afford to quit. We either raise wages and prices, or close. There is no third option.",
+      },
+      {
+        stakeholder: "Fiscal Conservatives",
+        description: "Economists and politicians prioritizing debt and growth orthodoxy",
+        impacts: { environment: 0, economy: -60, wellbeing: -10, culture: -40, equity: 10, longterm: -50 },
+        quote: "You cannot build long-term prosperity on permanently subsidized inactivity. The math does not work.",
+      },
+      {
+        stakeholder: "Creative & Care Workers",
+        description: "Artists, caregivers, and volunteers whose work is currently uncompensated",
+        impacts: { environment: 20, economy: 30, wellbeing: 85, culture: 75, equity: 70, longterm: 60 },
+        quote: "Society finally acknowledges that raising children, making art, and caring for the elderly has value.",
+      },
+    ],
+  },
 ];
