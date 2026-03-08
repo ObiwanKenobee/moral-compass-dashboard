@@ -11,7 +11,10 @@ import { TemporalComparison } from "@/components/dashboard/TemporalComparison";
 import { ComparisonMode } from "@/components/dashboard/ComparisonMode";
 import { WhatIfEditor } from "@/components/dashboard/WhatIfEditor";
 import { WeightMatrix } from "@/components/dashboard/WeightMatrix";
-import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft } from "lucide-react";
+import { SavedScenarios } from "@/components/dashboard/SavedScenarios";
+import type { SavedScenario } from "@/components/dashboard/SavedScenarios";
+import { ExportReport } from "@/components/dashboard/ExportReport";
+import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown } from "lucide-react";
 
 type MobileTab = "dilemma" | "radar" | "stakeholders" | "timeline";
 
@@ -26,23 +29,27 @@ function ScoreChip({ label, value, color }: { label: string; value: string; colo
   );
 }
 
+type ActivePanel = "compare" | "whatif" | "weights" | "saved" | "export" | null;
+
 function ToolButton({
   active,
   onClick,
   icon: Icon,
   label,
   color,
+  badge,
 }: {
   active: boolean;
   onClick: () => void;
   icon: React.ElementType;
   label: string;
   color?: string;
+  badge?: number;
 }) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border ${
+      className={`relative flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border ${
         active
           ? "border-primary bg-primary/10 text-primary"
           : "border-border bg-card hover:border-secondary text-muted-foreground hover:text-foreground"
@@ -51,6 +58,11 @@ function ToolButton({
     >
       <Icon size={13} />
       <span className="hidden sm:inline">{label}</span>
+      {badge != null && badge > 0 && (
+        <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-primary text-primary-foreground text-[9px] font-mono flex items-center justify-center">
+          {badge}
+        </span>
+      )}
     </button>
   );
 }
@@ -59,16 +71,15 @@ export default function Index() {
   const [selected, setSelected] = useState<Decision>(DECISIONS[0]);
   const [timeframeIdx, setTimeframeIdx] = useState(0);
   const [trackedDimension, setTrackedDimension] = useState("environment");
-
-  // Feature panels
-  const [showComparison, setShowComparison] = useState(false);
-  const [showWhatIf, setShowWhatIf] = useState(false);
-  const [showWeightMatrix, setShowWeightMatrix] = useState(false);
+  const [activePanel, setActivePanel] = useState<ActivePanel>(null);
 
   // Weight state lifted up so weighted net shows in header
   const [weights, setWeights] = useState<Record<string, number>>(
     Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
   );
+
+  // Saved scenarios state
+  const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
 
   // Mobile
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -77,23 +88,19 @@ export default function Index() {
   const currentTimeframe = selected.timeframes[timeframeIdx];
   const prevTimeframe = timeframeIdx > 0 ? selected.timeframes[timeframeIdx - 1] : null;
 
-  // Uniform net
   const dimValues = Object.values(currentTimeframe.dimensions);
   const netImpact = Math.round(dimValues.reduce((a, b) => a + b, 0) / dimValues.length);
 
-  // Weighted net
+  const hasCustomWeights = DIMENSIONS.some((d) => weights[d.key] !== 1);
   const weightedNet = (() => {
-    let sum = 0;
-    let totalWeight = 0;
+    let sum = 0, total = 0;
     DIMENSIONS.forEach((d) => {
       const w = weights[d.key] ?? 1;
       sum += (currentTimeframe.dimensions[d.key] ?? 0) * w;
-      totalWeight += w;
+      total += w;
     });
-    return totalWeight > 0 ? Math.round(sum / totalWeight) : 0;
+    return total > 0 ? Math.round(sum / total) : 0;
   })();
-
-  const hasCustomWeights = DIMENSIONS.some((d) => weights[d.key] !== 1);
 
   function handleSelectDecision(d: Decision) {
     setSelected(d);
@@ -101,8 +108,24 @@ export default function Index() {
     setSidebarOpen(false);
   }
 
+  function togglePanel(p: ActivePanel) {
+    setActivePanel((prev) => (prev === p ? null : p));
+  }
+
   function netColor(v: number) {
     return v >= 20 ? "hsl(var(--positive))" : v >= -20 ? "hsl(var(--dim-economy))" : "hsl(var(--negative))";
+  }
+
+  function handleSaveScenario(partial: Omit<SavedScenario, "id" | "createdAt">) {
+    const now = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    setSavedScenarios((prev) => [
+      { ...partial, id: `${Date.now()}`, createdAt: now },
+      ...prev,
+    ]);
+  }
+
+  function handleDeleteScenario(id: string) {
+    setSavedScenarios((prev) => prev.filter((s) => s.id !== id));
   }
 
   const MOBILE_TABS: { id: MobileTab; label: string }[] = [
@@ -116,9 +139,9 @@ export default function Index() {
     <div className="min-h-screen bg-background grid-overlay">
       {/* ── Header ── */}
       <header className="border-b border-border bg-card/60 backdrop-blur-sm sticky top-0 z-40">
-        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-14 lg:h-16 flex items-center justify-between gap-3">
+        <div className="max-w-[1600px] mx-auto px-4 lg:px-6 h-14 lg:h-16 flex items-center justify-between gap-2">
           {/* Left: hamburger (mobile) + logo */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2.5 shrink-0">
             <button
               onClick={() => setSidebarOpen((v) => !v)}
               className="lg:hidden text-muted-foreground hover:text-foreground transition-colors p-1 rounded"
@@ -142,49 +165,37 @@ export default function Index() {
           </div>
 
           {/* Center: tool buttons */}
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1">
+            <ToolButton active={activePanel === "compare"} onClick={() => togglePanel("compare")} icon={GitCompare} label="Compare" />
+            <ToolButton active={activePanel === "whatif"} onClick={() => togglePanel("whatif")} icon={FlaskConical} label="What-If" />
             <ToolButton
-              active={showComparison}
-              onClick={() => { setShowComparison((v) => !v); setShowWhatIf(false); setShowWeightMatrix(false); }}
-              icon={GitCompare}
-              label="Compare"
-            />
-            <ToolButton
-              active={showWhatIf}
-              onClick={() => { setShowWhatIf((v) => !v); setShowComparison(false); setShowWeightMatrix(false); }}
-              icon={FlaskConical}
-              label="What-If"
-            />
-            <ToolButton
-              active={showWeightMatrix}
-              onClick={() => { setShowWeightMatrix((v) => !v); setShowComparison(false); setShowWhatIf(false); }}
+              active={activePanel === "weights"}
+              onClick={() => togglePanel("weights")}
               icon={Scale}
               label="Weights"
               color={hasCustomWeights ? "hsl(var(--dim-economy))" : undefined}
             />
+            <ToolButton
+              active={activePanel === "saved"}
+              onClick={() => togglePanel("saved")}
+              icon={Bookmark}
+              label="Saved"
+              badge={savedScenarios.length}
+            />
+            <ToolButton active={activePanel === "export"} onClick={() => togglePanel("export")} icon={FileDown} label="Export" />
           </div>
 
           {/* Right: score chips */}
-          <div className="flex items-center gap-1.5 lg:gap-3">
+          <div className="flex items-center gap-1 lg:gap-2 shrink-0">
             {hasCustomWeights && (
-              <ScoreChip
-                label="Weighted"
-                value={`${weightedNet > 0 ? "+" : ""}${weightedNet}`}
-                color={netColor(weightedNet)}
-              />
+              <ScoreChip label="Weighted" value={`${weightedNet > 0 ? "+" : ""}${weightedNet}`} color={netColor(weightedNet)} />
             )}
-            <ScoreChip
-              label="Net Impact"
-              value={`${netImpact > 0 ? "+" : ""}${netImpact}`}
-              color={netColor(netImpact)}
-            />
-            <ScoreChip label="Scale" value={selected.scale} color="hsl(var(--accent))" />
-            <div className="hidden sm:block">
-              <ScoreChip
-                label="Region"
-                value={selected.region.split(" ")[0]}
-                color="hsl(var(--muted-foreground))"
-              />
+            <ScoreChip label="Net Impact" value={`${netImpact > 0 ? "+" : ""}${netImpact}`} color={netColor(netImpact)} />
+            <div className="hidden md:block">
+              <ScoreChip label="Scale" value={selected.scale} color="hsl(var(--accent))" />
+            </div>
+            <div className="hidden lg:block">
+              <ScoreChip label="Region" value={selected.region.split(" ")[0]} color="hsl(var(--muted-foreground))" />
             </div>
           </div>
         </div>
@@ -196,9 +207,7 @@ export default function Index() {
               key={tab.id}
               onClick={() => setMobileTab(tab.id)}
               className={`flex-1 py-2 text-[11px] font-mono transition-colors ${
-                mobileTab === tab.id
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                mobileTab === tab.id ? "text-primary border-b-2 border-primary" : "text-muted-foreground hover:text-foreground"
               }`}
             >
               {tab.label}
@@ -210,16 +219,11 @@ export default function Index() {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div className="lg:hidden fixed inset-0 z-30 flex">
-          <div
-            className="absolute inset-0 bg-background/80 backdrop-blur-sm"
-            onClick={() => setSidebarOpen(false)}
-          />
+          <div className="absolute inset-0 bg-background/80 backdrop-blur-sm" onClick={() => setSidebarOpen(false)} />
           <aside className="relative z-10 w-[280px] bg-card border-r border-border h-full overflow-y-auto p-4 space-y-6">
             <div className="flex items-center justify-between">
               <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground">Select Dilemma</p>
-              <button onClick={() => setSidebarOpen(false)}>
-                <ChevronLeft size={16} className="text-muted-foreground" />
-              </button>
+              <button onClick={() => setSidebarOpen(false)}><ChevronLeft size={16} className="text-muted-foreground" /></button>
             </div>
             <DecisionSelector selected={selected} onSelect={handleSelectDecision} />
             <div className="bg-card border border-border rounded-xl p-4">
@@ -239,37 +243,62 @@ export default function Index() {
 
       <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-4 lg:py-6">
 
-        {/* ── Feature Panels (full-width, above main grid) ── */}
-        {showComparison && (
+        {/* ── Feature Panels ── */}
+        {activePanel === "compare" && (
           <div className="mb-6">
-            <ComparisonMode
-              primaryDecision={selected}
-              onClose={() => setShowComparison(false)}
-            />
+            <ComparisonMode primaryDecision={selected} onClose={() => setActivePanel(null)} />
           </div>
         )}
-        {showWhatIf && (
+        {activePanel === "whatif" && (
           <div className="mb-6">
             <WhatIfEditor
               baseDimensions={currentTimeframe.dimensions}
               timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
-              onClose={() => setShowWhatIf(false)}
+              decisionId={selected.id}
+              decisionTitle={selected.title}
+              onClose={() => setActivePanel(null)}
+              onSave={handleSaveScenario}
             />
           </div>
         )}
-        {showWeightMatrix && (
+        {activePanel === "weights" && (
           <div className="mb-6">
             <WeightMatrix
               dimensions={currentTimeframe.dimensions}
               onWeightsChange={setWeights}
-              onClose={() => setShowWeightMatrix(false)}
+              onClose={() => setActivePanel(null)}
+              decisionId={selected.id}
+              decisionTitle={selected.title}
+              timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
+              onSave={handleSaveScenario}
+            />
+          </div>
+        )}
+        {activePanel === "saved" && (
+          <div className="mb-6">
+            <SavedScenarios
+              scenarios={savedScenarios}
+              onClose={() => setActivePanel(null)}
+              onDelete={handleDeleteScenario}
+              onPreview={() => setActivePanel(null)}
+            />
+          </div>
+        )}
+        {activePanel === "export" && (
+          <div className="mb-6">
+            <ExportReport
+              decision={selected}
+              currentTimeframe={currentTimeframe}
+              timeframeIdx={timeframeIdx}
+              weightedNet={hasCustomWeights ? weightedNet : null}
+              weights={hasCustomWeights ? weights : null}
+              onClose={() => setActivePanel(null)}
             />
           </div>
         )}
 
         {/* ── Desktop Layout ── */}
-        <div className="hidden lg:grid grid-cols-[280px_1fr_300px] gap-6 min-h-[calc(100vh-120px)]">
-
+        <div className="hidden lg:grid grid-cols-[280px_1fr_300px] gap-6 min-h-[calc(100vh-130px)]">
           {/* Left sidebar */}
           <aside className="space-y-6">
             <DecisionSelector selected={selected} onSelect={handleSelectDecision} />
@@ -349,13 +378,10 @@ export default function Index() {
               <AtlasPrinciple />
             </div>
           )}
-
           {mobileTab === "radar" && (
             <div className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--shadow-card)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground">Impact Surface</p>
-                </div>
+                <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground mb-2">Impact Surface</p>
                 <ImpactRadar
                   dimensions={currentTimeframe.dimensions}
                   compareData={prevTimeframe ? { label: prevTimeframe.label, dimensions: prevTimeframe.dimensions } : null}
@@ -378,23 +404,19 @@ export default function Index() {
               />
             </div>
           )}
-
           {mobileTab === "stakeholders" && (
             <div className="space-y-4">
               <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground">Stakeholder Perspectives</p>
               <StakeholderPanel stakeholders={selected.stakeholders} />
             </div>
           )}
-
           {mobileTab === "timeline" && (
             <div className="space-y-4">
               <div className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--shadow-card)" }}>
                 <TimelineSlider timeframes={selected.timeframes} activeIndex={timeframeIdx} onChange={setTimeframeIdx} />
               </div>
               <div className="bg-card border border-border rounded-xl p-4" style={{ boxShadow: "var(--shadow-card)" }}>
-                <div className="flex items-center justify-between mb-2">
-                  <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground">Impact Surface</p>
-                </div>
+                <p className="font-mono text-xs tracking-widest uppercase text-muted-foreground mb-2">Impact Surface</p>
                 <ImpactRadar
                   dimensions={currentTimeframe.dimensions}
                   compareData={prevTimeframe ? { label: prevTimeframe.label, dimensions: prevTimeframe.dimensions } : null}
@@ -416,14 +438,10 @@ function DilemmaHeader({
   currentTimeframe: { label: string; years: string };
 }) {
   return (
-    <div
-      className="rounded-xl p-5 lg:p-6 border border-border relative overflow-hidden"
-      style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-card)" }}
-    >
-      <div
-        className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent)" }}
-      />
+    <div className="rounded-xl p-5 lg:p-6 border border-border relative overflow-hidden"
+      style={{ background: "var(--gradient-hero)", boxShadow: "var(--shadow-card)" }}>
+      <div className="absolute top-0 left-0 right-0 h-px"
+        style={{ background: "linear-gradient(90deg, transparent, hsl(var(--primary) / 0.6), transparent)" }} />
       <div className="flex items-center gap-2 mb-2">
         <span className="font-mono text-[10px] tracking-widest uppercase text-primary/80 bg-primary/10 px-2 py-0.5 rounded">
           Active Dilemma
@@ -447,10 +465,8 @@ function DilemmaHeader({
 
 function AtlasPrinciple() {
   return (
-    <div
-      className="bg-card border border-border/50 rounded-xl p-4"
-      style={{ borderLeftColor: "hsl(var(--primary) / 0.5)", borderLeftWidth: "2px", boxShadow: "var(--shadow-card)" }}
-    >
+    <div className="bg-card border border-border/50 rounded-xl p-4"
+      style={{ borderLeftColor: "hsl(var(--primary) / 0.5)", borderLeftWidth: "2px", boxShadow: "var(--shadow-card)" }}>
       <p className="font-mono text-[10px] uppercase tracking-widest text-primary/70 mb-2">Atlas Principle</p>
       <p className="text-xs text-muted-foreground leading-relaxed font-display italic">
         "Atlas does not make the decision. It reveals the moral landscape clearly enough that leaders understand the full weight of their choices."
