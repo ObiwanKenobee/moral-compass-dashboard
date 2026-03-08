@@ -1,12 +1,17 @@
 import { useState, useCallback } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import { ImpactRadar } from "./ImpactRadar";
-import { RotateCcw, X } from "lucide-react";
+import { SaveDialog } from "./SavedScenarios";
+import type { SavedScenario } from "./SavedScenarios";
+import { RotateCcw, X, Bookmark } from "lucide-react";
 
 interface WhatIfEditorProps {
   baseDimensions: Record<string, number>;
   timeframeLabel: string;
+  decisionId: string;
+  decisionTitle: string;
   onClose: () => void;
+  onSave: (scenario: Omit<SavedScenario, "id" | "createdAt">) => void;
 }
 
 function DimSlider({
@@ -30,7 +35,7 @@ function DimSlider({
   }
 
   return (
-    <div className="space-y-2 py-3 border-b border-border/40 last:border-0">
+    <div className="space-y-1.5 py-3 border-b border-border/40 last:border-0">
       <div className="flex items-center justify-between">
         <span className="text-xs font-mono text-foreground">
           {dim.icon} {dim.label}
@@ -55,16 +60,15 @@ function DimSlider({
           onChange={(e) => onChange(dim.key, parseInt(e.target.value))}
           className="w-full h-1.5 rounded-full appearance-none cursor-pointer"
           style={{
-            background: `linear-gradient(to right, 
-              hsl(var(--muted)) 0%, 
-              hsl(var(--muted)) ${((value + 100) / 200) * 100}%, 
-              hsl(var(--border)) ${((value + 100) / 200) * 100}%, 
+            background: `linear-gradient(to right,
+              hsl(var(--muted)) 0%,
+              hsl(var(--muted)) ${((value + 100) / 200) * 100}%,
+              hsl(var(--border)) ${((value + 100) / 200) * 100}%,
               hsl(var(--border)) 100%
             )`,
             accentColor: barColor(value),
           }}
         />
-        {/* Center tick mark */}
         <div className="absolute top-1/2 left-1/2 -translate-y-1/2 -translate-x-1/2 w-px h-3 bg-border pointer-events-none" />
       </div>
       <div className="flex justify-between">
@@ -76,8 +80,9 @@ function DimSlider({
   );
 }
 
-export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIfEditorProps) {
+export function WhatIfEditor({ baseDimensions, timeframeLabel, decisionId, decisionTitle, onClose, onSave }: WhatIfEditorProps) {
   const [modifiedDims, setModifiedDims] = useState<Record<string, number>>({ ...baseDimensions });
+  const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const handleChange = useCallback((key: string, val: number) => {
     setModifiedDims((prev) => ({ ...prev, [key]: val }));
@@ -97,6 +102,18 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIf
 
   const hasChanges = DIMENSIONS.some((d) => modifiedDims[d.key] !== baseDimensions[d.key]);
 
+  function handleSave(name: string) {
+    onSave({
+      name,
+      type: "whatif",
+      decisionId,
+      decisionTitle,
+      timeframeLabel,
+      dimensions: { ...modifiedDims },
+    });
+    setShowSaveDialog(false);
+  }
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden animate-float-up" style={{ boxShadow: "var(--shadow-card)" }}>
       {/* Header */}
@@ -107,13 +124,22 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIf
         </div>
         <div className="flex items-center gap-2">
           {hasChanges && (
-            <button
-              onClick={handleReset}
-              className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border hover:border-secondary"
-            >
-              <RotateCcw size={10} />
-              Reset
-            </button>
+            <>
+              <button
+                onClick={() => setShowSaveDialog((v) => !v)}
+                className="flex items-center gap-1 text-[10px] font-mono text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded border border-primary/30 hover:border-primary/60"
+              >
+                <Bookmark size={10} />
+                Save
+              </button>
+              <button
+                onClick={handleReset}
+                className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground hover:text-foreground transition-colors px-2 py-1 rounded border border-border hover:border-secondary"
+              >
+                <RotateCcw size={10} />
+                Reset
+              </button>
+            </>
           )}
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
             <X size={16} />
@@ -121,9 +147,15 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIf
         </div>
       </div>
 
-      <div className="grid grid-cols-[1fr_260px] gap-0">
+      {showSaveDialog && (
+        <div className="px-5 pt-3">
+          <SaveDialog onSave={handleSave} onCancel={() => setShowSaveDialog(false)} />
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_260px] gap-0">
         {/* Sliders */}
-        <div className="p-5 border-r border-border overflow-y-auto max-h-[520px]">
+        <div className="p-5 lg:border-r border-border overflow-y-auto max-h-[520px]">
           <p className="text-[10px] font-mono text-muted-foreground mb-3 uppercase tracking-wider">
             Adjust dimension values to simulate modified scenarios
           </p>
@@ -142,7 +174,6 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIf
         <div className="p-5 flex flex-col gap-4">
           <p className="text-[10px] font-mono text-muted-foreground uppercase tracking-wider">Live Impact Surface</p>
 
-          {/* Net impact delta */}
           <div className="bg-muted/30 rounded-lg p-3 flex items-center justify-between">
             <div>
               <p className="text-[10px] font-mono text-muted-foreground">Base Net</p>
@@ -153,7 +184,7 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, onClose }: WhatIf
             <div className="text-center">
               <p className="text-[10px] font-mono text-muted-foreground">Change</p>
               <p className="text-lg font-mono font-bold" style={{ color: netColor(netDelta) }}>
-                {netDelta > 0 ? "▲+" : netDelta < 0 ? "▼" : "="}{netDelta !== 0 ? netDelta : ""}
+                {netDelta > 0 ? "▲+" : netDelta < 0 ? "▼" : "="}{netDelta !== 0 ? Math.abs(netDelta) : ""}
               </p>
             </div>
             <div className="text-right">
