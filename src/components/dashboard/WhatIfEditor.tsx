@@ -110,6 +110,7 @@ export function WhatIfEditor({ baseDimensions, timeframeLabel, decisionId, decis
       decisionTitle,
       timeframeLabel,
       dimensions: { ...modifiedDims },
+      baseDimensions: { ...baseDimensions },
     });
     setShowSaveDialog(false);
   }

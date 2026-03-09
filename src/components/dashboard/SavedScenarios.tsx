@@ -9,8 +9,9 @@ export interface SavedScenario {
   decisionId: string;
   decisionTitle: string;
   timeframeLabel: string;
-  dimensions: Record<string, number>;   // effective (modified) dims for whatif, or base for weights
-  weights?: Record<string, number>;     // only for weight scenarios
+  dimensions: Record<string, number>;      // effective (modified) dims for whatif, base for weights
+  baseDimensions?: Record<string, number>; // original dims before whatif modification
+  weights?: Record<string, number>;        // only for weight scenarios
   createdAt: string;
 }
 
@@ -117,6 +118,8 @@ export function SavedScenarios({ onClose, onPreview, scenarios, onDelete }: Save
                   <div className="grid grid-cols-6 gap-1 mb-3">
                     {DIMENSIONS.map((d) => {
                       const val = s.dimensions[d.key] ?? 0;
+                      const baseVal = s.baseDimensions?.[d.key];
+                      const delta = baseVal !== undefined ? val - baseVal : 0;
                       return (
                         <div key={d.key} className="flex flex-col items-center gap-0.5">
                           <span className="text-[9px]">{d.icon}</span>
@@ -131,6 +134,11 @@ export function SavedScenarios({ onClose, onPreview, scenarios, onDelete }: Save
                             />
                           </div>
                           <span className="text-[8px] font-mono text-muted-foreground">{val > 0 ? "+" : ""}{val}</span>
+                          {s.type === "whatif" && baseVal !== undefined && delta !== 0 && (
+                            <span className="text-[7px] font-mono" style={{ color: delta > 0 ? "hsl(var(--positive))" : "hsl(var(--negative))" }}>
+                              {delta > 0 ? "↑" : "↓"}{Math.abs(delta)}
+                            </span>
+                          )}
                         </div>
                       );
                     })}

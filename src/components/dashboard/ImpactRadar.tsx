@@ -84,8 +84,10 @@ function AnimatedPolygon({
   const progress = useSpring(0, { stiffness: 120, damping: 24, mass: 0.8 });
 
   useEffect(() => {
-    const from = prevPtsRef.current;
+    const from = [...prevPtsRef.current];
     const to = dimsToPoints(targetDims);
+    // Snapshot target immediately so cleanup always captures latest
+    prevPtsRef.current = to;
 
     progress.set(0);
     const unsubscribe = progress.on("change", (t) => {
@@ -98,7 +100,6 @@ function AnimatedPolygon({
 
     return () => {
       unsubscribe();
-      prevPtsRef.current = to;
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [targetDims]);

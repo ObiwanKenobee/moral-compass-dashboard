@@ -56,9 +56,7 @@ export function DimensionCard({ dimension, value, compareValue }: DimensionCardP
           className="absolute top-0 h-full rounded-full transition-all duration-700"
           style={{
             width: `${barWidth / 2}%`,
-            left: isPositive ? "50%" : undefined,
-            right: isPositive ? undefined : `${50}%`,
-            marginRight: isPositive ? undefined : `${50 - barWidth / 2}%`,
+            left: isPositive ? "50%" : `calc(50% - ${barWidth / 2}%)`,
             background: barColor,
           }}
         />
