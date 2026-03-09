@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DECISIONS, DIMENSIONS } from "@/data/decisions";
 import type { Decision } from "@/data/decisions";
@@ -17,7 +17,9 @@ import type { SavedScenario } from "@/components/dashboard/SavedScenarios";
 import { ExportReport } from "@/components/dashboard/ExportReport";
 import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
-import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon } from "lucide-react";
+import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
+import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
+import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard } from "lucide-react";
 
 type MobileTab = "dilemma" | "radar" | "stakeholders" | "timeline";
 
