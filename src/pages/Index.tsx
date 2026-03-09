@@ -674,6 +674,67 @@ export default function Index() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Keyboard shortcut help modal ── */}
+      <AnimatePresence>
+        {showKbHelp && (
+          <>
+            <motion.div
+              key="kb-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
+              onClick={() => setShowKbHelp(false)}
+            />
+            <motion.div
+              key="kb-modal"
+              initial={{ opacity: 0, scale: 0.94, y: -12 }}
+              animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+              exit={{ opacity: 0, scale: 0.94, y: -8, transition: { duration: 0.15 } }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[360px] bg-card border border-border rounded-xl overflow-hidden"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30">
+                <div className="flex items-center gap-2">
+                  <Keyboard size={13} className="text-primary" />
+                  <p className="font-mono text-xs tracking-widest uppercase text-primary">Keyboard Shortcuts</p>
+                </div>
+                <button onClick={() => setShowKbHelp(false)} className="text-muted-foreground hover:text-foreground p-1 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="p-5 space-y-3">
+                {[
+                  { keys: ["↑", "↓"], label: "Previous / Next dilemma" },
+                  { keys: ["←", "→"], label: "Previous / Next dilemma" },
+                  { keys: ["1", "2", "3"], label: "Switch timeframe (Immediate / Short / Long)" },
+                  { keys: ["Esc"], label: "Close active panel" },
+                  { keys: ["?"], label: "Toggle this help" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-muted-foreground">{item.label}</span>
+                    <div className="flex items-center gap-1">
+                      {item.keys.map((k) => (
+                        <kbd
+                          key={k}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-mono text-foreground"
+                          style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}
+                        >
+                          {k}
+                        </kbd>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-[9px] font-mono text-muted-foreground/40 pt-2 border-t border-border/40">
+                  Shortcuts inactive when typing in inputs
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
