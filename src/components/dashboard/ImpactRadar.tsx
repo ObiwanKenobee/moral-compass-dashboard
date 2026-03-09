@@ -172,7 +172,7 @@ const CustomTooltip = ({
   );
 };
 
-export function ImpactRadar({ dimensions, compareData }: ImpactRadarProps) {
+export function ImpactRadar({ dimensions, compareData, svgRef }: ImpactRadarProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const n = DIMENSIONS.length;
   const rings = [0.25, 0.5, 0.75, 1.0];
@@ -180,6 +180,7 @@ export function ImpactRadar({ dimensions, compareData }: ImpactRadarProps) {
   return (
     <div className="w-full" style={{ aspectRatio: `${W}/${H}` }}>
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
         height="100%"
