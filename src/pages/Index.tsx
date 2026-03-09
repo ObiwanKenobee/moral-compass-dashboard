@@ -422,6 +422,24 @@ export default function Index() {
               />
             </motion.div>
           )}
+          {activePanel === "heatmap" && (
+            <motion.div key="heatmap" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+              <TensionHeatmap
+                selectedId={selected.id}
+                onSelect={handleSelectDecision}
+                timeframeIdx={timeframeIdx}
+                onClose={() => setActivePanel(null)}
+              />
+            </motion.div>
+          )}
+          {activePanel === "journal" && (
+            <motion.div key="journal" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+              <DecisionJournal
+                decision={selected}
+                onClose={() => setActivePanel(null)}
+              />
+            </motion.div>
+          )}
           {activePanel === "export" && (
             <motion.div key="export" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
               <ExportReport
