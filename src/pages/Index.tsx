@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { DECISIONS, DIMENSIONS } from "@/data/decisions";
 import type { Decision } from "@/data/decisions";
@@ -17,7 +17,9 @@ import type { SavedScenario } from "@/components/dashboard/SavedScenarios";
 import { ExportReport } from "@/components/dashboard/ExportReport";
 import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
-import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon } from "lucide-react";
+import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
+import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
+import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard } from "lucide-react";
 
 type MobileTab = "dilemma" | "radar" | "stakeholders" | "timeline";
 
@@ -30,7 +32,7 @@ function ScoreChip({ label, value, color }: { label: string; value: string; colo
   );
 }
 
-type ActivePanel = "compare" | "whatif" | "weights" | "saved" | "export" | "compass" | "table" | null;
+type ActivePanel = "compare" | "whatif" | "weights" | "saved" | "export" | "compass" | "table" | "heatmap" | "journal" | null;
 
 function ToolButton({
   active,
@@ -113,6 +115,7 @@ export default function Index() {
   const [timeframeIdx, setTimeframeIdx] = useState(0);
   const [trackedDimension, setTrackedDimension] = useState("environment");
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
+  const [showKbHelp, setShowKbHelp] = useState(false);
 
   const [weights, setWeights] = useState<Record<string, number>>(
     Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
@@ -143,7 +146,10 @@ export default function Index() {
     return total > 0 ? Math.round(sum / total) : 0;
   })();
 
-  function handleSelectDecision(d: Decision) {
+  // Journal badge — live count from localStorage
+  const journalCount = useJournalCount(selected.id);
+
+  const handleSelectDecision = useCallback((d: Decision) => {
     const oldIdx = DECISIONS.findIndex((dec) => dec.id === selected.id);
     const newIdx = DECISIONS.findIndex((dec) => dec.id === d.id);
     setDilemmaDirection(newIdx > oldIdx ? 1 : -1);
@@ -151,7 +157,38 @@ export default function Index() {
     setSelected(d);
     setTimeframeIdx(0);
     setSidebarOpen(false);
-  }
+  }, [selected.id]);
+
+  // ── Keyboard Navigation ──
+  useEffect(() => {
+    function handleKey(e: KeyboardEvent) {
+      // Don't fire when typing in inputs/textareas
+      const tag = (e.target as HTMLElement).tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+
+      const currentIdx = DECISIONS.findIndex((d) => d.id === selected.id);
+      const maxTf = selected.timeframes.length - 1;
+
+      if (e.key === "Escape") {
+        setActivePanel(null);
+        setShowKbHelp(false);
+      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+        if (currentIdx > 0) handleSelectDecision(DECISIONS[currentIdx - 1]);
+      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+        if (currentIdx < DECISIONS.length - 1) handleSelectDecision(DECISIONS[currentIdx + 1]);
+      } else if (e.key === "1") {
+        setTimeframeIdx(0);
+      } else if (e.key === "2") {
+        if (maxTf >= 1) setTimeframeIdx(1);
+      } else if (e.key === "3") {
+        if (maxTf >= 2) setTimeframeIdx(2);
+      } else if (e.key === "?") {
+        setShowKbHelp((v) => !v);
+      }
+    }
+    window.addEventListener("keydown", handleKey);
+    return () => window.removeEventListener("keydown", handleKey);
+  }, [selected, handleSelectDecision]);
 
   function togglePanel(p: ActivePanel) {
     setActivePanel((prev) => (prev === p ? null : p));
@@ -235,7 +272,22 @@ export default function Index() {
               label="Compare Scenarios"
               badge={savedScenarios.length >= 2 ? savedScenarios.length : undefined}
             />
+            <ToolButton active={activePanel === "heatmap"} onClick={() => togglePanel("heatmap")} icon={Grid3X3} label="Heatmap" />
+            <ToolButton
+              active={activePanel === "journal"}
+              onClick={() => togglePanel("journal")}
+              icon={BookOpen}
+              label="Journal"
+              badge={journalCount > 0 ? journalCount : undefined}
+            />
             <ToolButton active={activePanel === "export"} onClick={() => togglePanel("export")} icon={FileDown} label="Export" />
+            <button
+              onClick={() => setShowKbHelp((v) => !v)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-secondary text-muted-foreground hover:text-foreground"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard size={12} />
+            </button>
           </div>
 
           {/* Right: score chips */}
@@ -366,6 +418,24 @@ export default function Index() {
             <motion.div key="table" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
               <ScenarioComparisonTable
                 scenarios={savedScenarios}
+                onClose={() => setActivePanel(null)}
+              />
+            </motion.div>
+          )}
+          {activePanel === "heatmap" && (
+            <motion.div key="heatmap" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+              <TensionHeatmap
+                selectedId={selected.id}
+                onSelect={handleSelectDecision}
+                timeframeIdx={timeframeIdx}
+                onClose={() => setActivePanel(null)}
+              />
+            </motion.div>
+          )}
+          {activePanel === "journal" && (
+            <motion.div key="journal" className="mb-6" variants={panelVariants} initial="hidden" animate="visible" exit="exit">
+              <DecisionJournal
+                decision={selected}
                 onClose={() => setActivePanel(null)}
               />
             </motion.div>
@@ -604,6 +674,67 @@ export default function Index() {
           </AnimatePresence>
         </div>
       </div>
+
+      {/* ── Keyboard shortcut help modal ── */}
+      <AnimatePresence>
+        {showKbHelp && (
+          <>
+            <motion.div
+              key="kb-backdrop"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 z-50 bg-background/70 backdrop-blur-sm"
+              onClick={() => setShowKbHelp(false)}
+            />
+            <motion.div
+              key="kb-modal"
+              initial={{ opacity: 0, scale: 0.94, y: -12 }}
+              animate={{ opacity: 1, scale: 1, y: 0, transition: { duration: 0.2, ease: [0.22, 1, 0.36, 1] } }}
+              exit={{ opacity: 0, scale: 0.94, y: -8, transition: { duration: 0.15 } }}
+              className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-[360px] bg-card border border-border rounded-xl overflow-hidden"
+              style={{ boxShadow: "var(--shadow-card)" }}
+            >
+              <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30">
+                <div className="flex items-center gap-2">
+                  <Keyboard size={13} className="text-primary" />
+                  <p className="font-mono text-xs tracking-widest uppercase text-primary">Keyboard Shortcuts</p>
+                </div>
+                <button onClick={() => setShowKbHelp(false)} className="text-muted-foreground hover:text-foreground p-1 rounded">
+                  <X size={14} />
+                </button>
+              </div>
+              <div className="p-5 space-y-3">
+                {[
+                  { keys: ["↑", "↓"], label: "Previous / Next dilemma" },
+                  { keys: ["←", "→"], label: "Previous / Next dilemma" },
+                  { keys: ["1", "2", "3"], label: "Switch timeframe (Immediate / Short / Long)" },
+                  { keys: ["Esc"], label: "Close active panel" },
+                  { keys: ["?"], label: "Toggle this help" },
+                ].map((item) => (
+                  <div key={item.label} className="flex items-center justify-between">
+                    <span className="text-xs font-mono text-muted-foreground">{item.label}</span>
+                    <div className="flex items-center gap-1">
+                      {item.keys.map((k) => (
+                        <kbd
+                          key={k}
+                          className="px-1.5 py-0.5 rounded text-[10px] font-mono text-foreground"
+                          style={{ background: "hsl(var(--secondary))", border: "1px solid hsl(var(--border))" }}
+                        >
+                          {k}
+                        </kbd>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+                <p className="text-[9px] font-mono text-muted-foreground/40 pt-2 border-t border-border/40">
+                  Shortcuts inactive when typing in inputs
+                </p>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
