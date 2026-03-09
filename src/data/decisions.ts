@@ -489,4 +489,88 @@ export const DECISIONS: Decision[] = [
       },
     ],
   },
+  {
+    id: "genetic-screening",
+    title: "Mandatory Genetic Screening at Birth",
+    subtitle: "Universal newborn genome sequencing program",
+    context:
+      "A national mandate would sequence the full genome of every newborn, storing data in a federated health database. It could predict 4,300+ hereditary conditions, enable early interventions saving an estimated 220,000 lives per decade, and allow insurers and employers to access anonymized risk pools — while creating an unprecedented biological surveillance infrastructure and permanently altering the right to genetic privacy.",
+    region: "Western Europe",
+    scale: "National",
+    moralWeight: 95,
+    irreversibilityScore: 70,
+    uncertaintyScore: 62,
+    keyTension:
+      "Saving hundreds of thousands through early genetic intervention vs. creating a permanent biological identity record that could enable discrimination, surveillance, and the erosion of consent for unborn persons",
+    historicalAnalogues: [
+      "Newborn PKU bloodspot screening (1960s–present)",
+      "Iceland deCODE Genetics population project",
+      "China's national DNA database program",
+      "UK Biobank voluntary genomic registry",
+    ],
+    timeframes: [
+      {
+        label: "Immediate",
+        years: "0–5 years",
+        dimensions: {
+          environment: 0,
+          economy: -20,
+          wellbeing: 45,
+          culture: -30,
+          equity: -25,
+          longterm: -15,
+        },
+      },
+      {
+        label: "Short-Term",
+        years: "5–20 years",
+        dimensions: {
+          environment: 5,
+          economy: 35,
+          wellbeing: 65,
+          culture: -50,
+          equity: -45,
+          longterm: -30,
+        },
+      },
+      {
+        label: "Long-Term",
+        years: "20–60 years",
+        dimensions: {
+          environment: 10,
+          economy: 55,
+          wellbeing: 70,
+          culture: -65,
+          equity: -60,
+          longterm: -55,
+        },
+      },
+    ],
+    stakeholders: [
+      {
+        stakeholder: "Parents & Families",
+        description: "Parents making health decisions for newborns who cannot consent",
+        impacts: { environment: 0, economy: 25, wellbeing: 60, culture: -30, equity: -20, longterm: -10 },
+        quote: "I want to know if my child will suffer — but I never agreed to hand their DNA to a government database forever.",
+      },
+      {
+        stakeholder: "Insurance Industry",
+        description: "Health and life insurers seeking actuarial risk data",
+        impacts: { environment: 0, economy: 80, wellbeing: -20, culture: -10, equity: -75, longterm: 30 },
+        quote: "Risk pooling requires data. Accurate risk data means fair pricing for low-risk individuals.",
+      },
+      {
+        stakeholder: "Bioethicists & Rights Advocates",
+        description: "Philosophers and civil liberties groups protecting genetic autonomy",
+        impacts: { environment: 0, economy: -15, wellbeing: -30, culture: -70, equity: -80, longterm: -85 },
+        quote: "We are encoding a child's entire biological destiny into a state record before they draw their first breath.",
+      },
+      {
+        stakeholder: "Future Patients",
+        description: "People who will one day be diagnosed based on childhood genomic flags",
+        impacts: { environment: 0, economy: 40, wellbeing: 75, culture: -45, equity: -50, longterm: -60 },
+        quote: "They gave me a 74% lifetime risk score at birth. My whole life has been lived in the shadow of a probability.",
+      },
+    ],
+  },
 ];
