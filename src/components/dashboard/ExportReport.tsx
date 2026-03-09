@@ -1,7 +1,7 @@
 import { useRef, useState } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
-import { X, Download, Copy, Check } from "lucide-react";
+import { X, Download, Copy, Check, FileImage } from "lucide-react";
 
 interface ExportReportProps {
   decision: Decision;
@@ -9,6 +9,7 @@ interface ExportReportProps {
   timeframeIdx: number;
   weightedNet: number | null;
   weights: Record<string, number> | null;
+  radarRef?: React.RefObject<SVGSVGElement | null>;
   onClose: () => void;
 }
 
@@ -36,10 +37,7 @@ function ImpactBar({ value }: { value: number }) {
           }}
         />
       </div>
-      <span
-        className="text-xs font-mono font-bold w-10 text-right"
-        style={{ color: color(value) }}
-      >
+      <span className="text-xs font-mono font-bold w-10 text-right" style={{ color: color(value) }}>
         {value > 0 ? "+" : ""}{value}
       </span>
     </div>
@@ -52,10 +50,12 @@ export function ExportReport({
   timeframeIdx,
   weightedNet,
   weights,
+  radarRef,
   onClose,
 }: ExportReportProps) {
   const reportRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const uniformNet = Math.round(
     Object.values(currentTimeframe.dimensions).reduce((a, b) => a + b, 0) / 6
@@ -74,7 +74,7 @@ export function ExportReport({
     const thin = "─".repeat(60);
     const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
-    let lines: string[] = [
+    const lines: string[] = [
       divider,
       "  ATLAS MORAL TRADEOFF ANALYSIS",
       `  Generated: ${now}`,
@@ -121,12 +121,7 @@ export function ExportReport({
       });
     }
 
-    lines.push(
-      "",
-      thin,
-      "  STAKEHOLDER PERSPECTIVES",
-      thin,
-    );
+    lines.push("", thin, "  STAKEHOLDER PERSPECTIVES", thin);
 
     decision.stakeholders.forEach((s) => {
       const sNet = Math.round(Object.values(s.impacts).reduce((a, b) => a + b, 0) / 6);
@@ -135,12 +130,7 @@ export function ExportReport({
       lines.push(`  "${s.quote}"`);
     });
 
-    lines.push(
-      "",
-      thin,
-      "  HISTORICAL ANALOGUES",
-      thin,
-    );
+    lines.push("", thin, "  HISTORICAL ANALOGUES", thin);
     decision.historicalAnalogues.forEach((a) => lines.push(`  → ${a}`));
 
     lines.push(
@@ -161,7 +151,7 @@ export function ExportReport({
       setCopied(true);
       setTimeout(() => setCopied(false), 2500);
     } catch {
-      // fallback — do nothing
+      // ignore
     }
   }
 
@@ -176,12 +166,336 @@ export function ExportReport({
     URL.revokeObjectURL(url);
   }
 
+  async function handleDownloadPDF() {
+    setPdfLoading(true);
+    try {
+      const [html2canvasModule, jsPDFModule] = await Promise.all([
+        import("html2canvas"),
+        import("jspdf"),
+      ]);
+      const html2canvas = html2canvasModule.default;
+      const { jsPDF } = jsPDFModule;
+
+      const pdf = new jsPDF({ orientation: "portrait", unit: "mm", format: "a4" });
+      const pageW = 210;
+      const pageH = 297;
+      const margin = 14;
+      const contentW = pageW - margin * 2;
+      let y = margin;
+
+      // ── Page 1: header + core metrics ──
+      // Atlas branding strip
+      pdf.setFillColor(14, 15, 20);
+      pdf.rect(0, 0, pageW, pageH, "F");
+
+      // Amber accent bar
+      pdf.setFillColor(245, 158, 11);
+      pdf.rect(0, 0, pageW, 3, "F");
+
+      // Title block
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(20);
+      pdf.setTextColor(245, 158, 11);
+      pdf.text("ATLAS", margin, (y = 18));
+
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text("MORAL TRADEOFF ANALYSIS", margin, y + 5);
+
+      const now = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+      pdf.text(now, pageW - margin, y + 5, { align: "right" });
+
+      // Separator line
+      pdf.setDrawColor(40, 48, 64);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, (y += 10), pageW - margin, y);
+      y += 8;
+
+      // Dilemma title
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(16);
+      pdf.setTextColor(215, 220, 230);
+      const titleLines = pdf.splitTextToSize(decision.title, contentW);
+      pdf.text(titleLines, margin, y);
+      y += titleLines.length * 7;
+
+      pdf.setFont("helvetica", "italic");
+      pdf.setFontSize(9);
+      pdf.setTextColor(100, 115, 135);
+      pdf.text(decision.subtitle, margin, y);
+      y += 6;
+
+      // Meta chips row
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(8);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text(`🌍 ${decision.region}  ·  📏 ${decision.scale}  ·  📅 ${currentTimeframe.label} (${currentTimeframe.years})`, margin, y);
+      y += 8;
+
+      // Core tension
+      pdf.setDrawColor(245, 158, 11);
+      pdf.setLineWidth(0.8);
+      pdf.line(margin, y, margin, y + 16);
+      pdf.setFont("helvetica", "italic");
+      pdf.setFontSize(9);
+      pdf.setTextColor(200, 205, 215);
+      const tensionLines = pdf.splitTextToSize(`"${decision.keyTension}"`, contentW - 8);
+      pdf.text(tensionLines, margin + 5, y + 4);
+      y += Math.max(18, tensionLines.length * 5 + 6);
+
+      // Separator
+      pdf.setDrawColor(40, 48, 64);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 8;
+
+      // Complexity chips
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text("MORAL COMPLEXITY INDICATORS", margin, y);
+      y += 6;
+
+      const chips = [
+        { label: "Moral Weight", value: decision.moralWeight, suffix: "/100" },
+        { label: "Irreversibility", value: decision.irreversibilityScore, suffix: "/100" },
+        { label: "Uncertainty", value: decision.uncertaintyScore, suffix: "/100" },
+      ];
+      chips.forEach((c, i) => {
+        const cx = margin + i * (contentW / 3);
+        pdf.setFillColor(25, 30, 40);
+        pdf.roundedRect(cx, y, contentW / 3 - 3, 18, 2, 2, "F");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 115, 135);
+        pdf.text(c.label, cx + 4, y + 6);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(13);
+        pdf.setTextColor(245, 158, 11);
+        pdf.text(`${c.value}`, cx + 4, y + 15);
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 115, 135);
+        pdf.text(c.suffix, cx + 4 + pdf.getTextWidth(`${c.value}`) * 1.1, y + 15);
+      });
+      y += 24;
+
+      // Net impact scores
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text("NET IMPACT SCORES", margin, y);
+      y += 6;
+
+      function netRGB(v: number): [number, number, number] {
+        if (v >= 20) return [52, 211, 153];
+        if (v >= -20) return [245, 158, 11];
+        return [239, 68, 68];
+      }
+
+      const scoreBoxes = [
+        { label: "Uniform Net", value: uniformNet },
+        ...(hasCustomWeights && weightedNet !== null ? [{ label: "Weighted Net", value: weightedNet }] : []),
+      ];
+      scoreBoxes.forEach((sb, i) => {
+        const bx = margin + i * 46;
+        const [r2, g2, b2] = netRGB(sb.value);
+        pdf.setFillColor(25, 30, 40);
+        pdf.roundedRect(bx, y, 42, 22, 2, 2, "F");
+        pdf.setDrawColor(r2, g2, b2);
+        pdf.setLineWidth(0.5);
+        pdf.roundedRect(bx, y, 42, 22, 2, 2, "S");
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 115, 135);
+        pdf.text(sb.label, bx + 4, y + 7);
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(14);
+        pdf.setTextColor(r2, g2, b2);
+        pdf.text(`${sb.value > 0 ? "+" : ""}${sb.value}`, bx + 4, y + 18);
+      });
+      y += 28;
+
+      // ── Radar chart capture ──
+      if (radarRef?.current) {
+        try {
+          const svgEl = radarRef.current;
+          const serializer = new XMLSerializer();
+          const svgStr = serializer.serializeToString(svgEl);
+          const svgBlob = new Blob([svgStr], { type: "image/svg+xml;charset=utf-8" });
+          const svgUrl = URL.createObjectURL(svgBlob);
+
+          await new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              canvas.width = 800;
+              canvas.height = 760;
+              const ctx = canvas.getContext("2d")!;
+              ctx.fillStyle = "#0e0f14";
+              ctx.fillRect(0, 0, canvas.width, canvas.height);
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              const imgData = canvas.toDataURL("image/png");
+              const radarW = 80;
+              const radarH = 76;
+              pdf.addImage(imgData, "PNG", margin, y, radarW, radarH);
+              URL.revokeObjectURL(svgUrl);
+              resolve();
+            };
+            img.onerror = () => { URL.revokeObjectURL(svgUrl); resolve(); };
+            img.src = svgUrl;
+          });
+
+          // Dimension list beside radar
+          const dimX = margin + 84;
+          pdf.setFont("helvetica", "bold");
+          pdf.setFontSize(7);
+          pdf.setTextColor(130, 140, 160);
+          pdf.text("DIMENSIONS", dimX, y + 4);
+
+          DIMENSIONS.forEach((d, i) => {
+            const val = currentTimeframe.dimensions[d.key] ?? 0;
+            const [r2, g2, b2] = netRGB(val);
+            const dy = y + 10 + i * 10;
+            pdf.setFont("helvetica", "normal");
+            pdf.setFontSize(8);
+            pdf.setTextColor(180, 190, 200);
+            pdf.text(`${d.label}`, dimX, dy);
+            // Bar
+            const barX = dimX + 52;
+            const barMaxW = contentW - 52 - 84 + margin;
+            pdf.setFillColor(30, 38, 52);
+            pdf.roundedRect(barX, dy - 4, barMaxW, 5, 1, 1, "F");
+            const barFill = Math.abs(val) / 100 * barMaxW;
+            pdf.setFillColor(r2, g2, b2);
+            if (val >= 0) {
+              pdf.roundedRect(barX + barMaxW / 2, dy - 4, barFill / 2, 5, 1, 1, "F");
+            } else {
+              pdf.roundedRect(barX + barMaxW / 2 - barFill / 2, dy - 4, barFill / 2, 5, 1, 1, "F");
+            }
+            // Value
+            pdf.setFont("helvetica", "bold");
+            pdf.setFontSize(7);
+            pdf.setTextColor(r2, g2, b2);
+            pdf.text(`${val > 0 ? "+" : ""}${val}`, pageW - margin, dy, { align: "right" });
+          });
+
+          y += 82;
+        } catch {
+          // radar capture failed — skip
+          y += 4;
+        }
+      }
+
+      // ── Page 2: Stakeholders ──
+      pdf.addPage();
+      pdf.setFillColor(14, 15, 20);
+      pdf.rect(0, 0, pageW, pageH, "F");
+      pdf.setFillColor(245, 158, 11);
+      pdf.rect(0, 0, pageW, 3, "F");
+
+      y = margin + 8;
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(10);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text("STAKEHOLDER PERSPECTIVES", margin, y);
+      y += 8;
+
+      decision.stakeholders.forEach((s) => {
+        const sNet = Math.round(Object.values(s.impacts).reduce((a, b) => a + b, 0) / 6);
+        const [sr, sg, sb2] = netRGB(sNet);
+
+        // Stakeholder card
+        if (y > pageH - 60) {
+          pdf.addPage();
+          pdf.setFillColor(14, 15, 20);
+          pdf.rect(0, 0, pageW, pageH, "F");
+          y = margin + 8;
+        }
+
+        pdf.setFillColor(22, 27, 38);
+        pdf.roundedRect(margin, y, contentW, 40, 3, 3, "F");
+
+        // Net score badge
+        pdf.setFillColor(sr, sg, sb2);
+        pdf.roundedRect(pageW - margin - 18, y + 4, 16, 12, 2, 2, "F");
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(10, 12, 18);
+        pdf.text(`${sNet > 0 ? "+" : ""}${sNet}`, pageW - margin - 10, y + 12, { align: "center" });
+
+        // Name
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(9);
+        pdf.setTextColor(215, 220, 230);
+        pdf.text(s.stakeholder, margin + 4, y + 10);
+
+        // Description
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(100, 115, 135);
+        pdf.text(s.description, margin + 4, y + 17);
+
+        // Quote
+        pdf.setFont("helvetica", "italic");
+        pdf.setFontSize(8);
+        pdf.setTextColor(180, 190, 205);
+        const qLines = pdf.splitTextToSize(`"${s.quote}"`, contentW - 12);
+        pdf.text(qLines.slice(0, 2), margin + 5, y + 25);
+
+        // Left accent bar
+        pdf.setFillColor(sr, sg, sb2);
+        pdf.rect(margin, y + 6, 2, 28, "F");
+
+        y += 46;
+      });
+
+      y += 6;
+      pdf.setDrawColor(40, 48, 64);
+      pdf.setLineWidth(0.4);
+      pdf.line(margin, y, pageW - margin, y);
+      y += 8;
+
+      // Historical analogues
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(8);
+      pdf.setTextColor(130, 140, 160);
+      pdf.text("HISTORICAL ANALOGUES", margin, y);
+      y += 6;
+
+      decision.historicalAnalogues.forEach((a) => {
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(8);
+        pdf.setTextColor(180, 190, 205);
+        pdf.text(`→  ${a}`, margin + 2, y);
+        y += 6;
+      });
+
+      // Footer
+      y = pageH - 16;
+      pdf.setDrawColor(40, 48, 64);
+      pdf.setLineWidth(0.3);
+      pdf.line(margin, y, pageW - margin, y);
+      pdf.setFont("helvetica", "italic");
+      pdf.setFontSize(7);
+      pdf.setTextColor(70, 82, 100);
+      pdf.text("Atlas does not make the decision. It reveals the moral landscape.", margin, y + 6);
+      pdf.text("atlas.moraldashboard.app", pageW - margin, y + 6, { align: "right" });
+
+      pdf.save(`atlas-${decision.id}-${currentTimeframe.label.toLowerCase()}.pdf`);
+    } catch (err) {
+      console.error("PDF generation failed:", err);
+    }
+    setPdfLoading(false);
+  }
+
   return (
     <div className="bg-card border border-border rounded-xl overflow-hidden animate-float-up" style={{ boxShadow: "var(--shadow-card)" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30 flex-wrap gap-2">
         <p className="font-mono text-xs tracking-widest uppercase text-primary">📋 Export Analysis Report</p>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={handleCopyText}
             className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors"
@@ -191,10 +505,18 @@ export function ExportReport({
           </button>
           <button
             onClick={handleDownloadText}
-            className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 transition-colors"
+            className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors"
           >
             <Download size={12} />
-            Download .txt
+            .txt
+          </button>
+          <button
+            onClick={handleDownloadPDF}
+            disabled={pdfLoading}
+            className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-50"
+          >
+            <FileImage size={12} />
+            {pdfLoading ? "Generating…" : "Download PDF"}
           </button>
           <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
             <X size={16} />

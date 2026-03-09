@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring } from "framer-motion";
 import { DIMENSIONS } from "@/data/decisions";
 
 interface ImpactRadarProps {
   dimensions: Record<string, number>;
   compareData?: { label: string; dimensions: Record<string, number> } | null;
+  svgRef?: React.RefObject<SVGSVGElement | null>;
 }
 
 const W = 400;
@@ -171,7 +172,7 @@ const CustomTooltip = ({
   );
 };
 
-export function ImpactRadar({ dimensions, compareData }: ImpactRadarProps) {
+export function ImpactRadar({ dimensions, compareData, svgRef }: ImpactRadarProps) {
   const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
   const n = DIMENSIONS.length;
   const rings = [0.25, 0.5, 0.75, 1.0];
@@ -179,6 +180,7 @@ export function ImpactRadar({ dimensions, compareData }: ImpactRadarProps) {
   return (
     <div className="w-full" style={{ aspectRatio: `${W}/${H}` }}>
       <svg
+        ref={svgRef}
         viewBox={`0 0 ${W} ${H}`}
         width="100%"
         height="100%"
