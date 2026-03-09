@@ -272,7 +272,22 @@ export default function Index() {
               label="Compare Scenarios"
               badge={savedScenarios.length >= 2 ? savedScenarios.length : undefined}
             />
+            <ToolButton active={activePanel === "heatmap"} onClick={() => togglePanel("heatmap")} icon={Grid3X3} label="Heatmap" />
+            <ToolButton
+              active={activePanel === "journal"}
+              onClick={() => togglePanel("journal")}
+              icon={BookOpen}
+              label="Journal"
+              badge={journalCount > 0 ? journalCount : undefined}
+            />
             <ToolButton active={activePanel === "export"} onClick={() => togglePanel("export")} icon={FileDown} label="Export" />
+            <button
+              onClick={() => setShowKbHelp((v) => !v)}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-secondary text-muted-foreground hover:text-foreground"
+              title="Keyboard shortcuts (?)"
+            >
+              <Keyboard size={12} />
+            </button>
           </div>
 
           {/* Right: score chips */}
