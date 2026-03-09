@@ -32,7 +32,7 @@ function ScoreChip({ label, value, color }: { label: string; value: string; colo
   );
 }
 
-type ActivePanel = "compare" | "whatif" | "weights" | "saved" | "export" | "compass" | "table" | null;
+type ActivePanel = "compare" | "whatif" | "weights" | "saved" | "export" | "compass" | "table" | "heatmap" | "journal" | null;
 
 function ToolButton({
   active,
