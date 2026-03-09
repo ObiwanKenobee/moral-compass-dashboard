@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from "react";
-import { motion, useSpring, useTransform } from "framer-motion";
+import { motion, useSpring } from "framer-motion";
 import { DIMENSIONS } from "@/data/decisions";
 
 interface ImpactRadarProps {
   dimensions: Record<string, number>;
   compareData?: { label: string; dimensions: Record<string, number> } | null;
+  svgRef?: React.RefObject<SVGSVGElement | null>;
 }
 
 const W = 400;

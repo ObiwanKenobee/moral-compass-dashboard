@@ -69,10 +69,12 @@ function ToolButton({
 }
 
 // Animation variants for panel entrance/exit
+const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
 const panelVariants = {
   hidden: { opacity: 0, y: -12, scale: 0.98 },
-  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, y: -8, scale: 0.97, transition: { duration: 0.18, ease: "easeIn" } },
+  visible: { opacity: 1, y: 0, scale: 1, transition: { duration: 0.25, ease: EASE_OUT } },
+  exit: { opacity: 0, y: -8, scale: 0.97, transition: { duration: 0.18, ease: "easeIn" as const } },
 };
 
 // Animation variants for dilemma content transitions
@@ -84,12 +86,12 @@ const dilemmaVariants = {
   center: {
     x: 0,
     opacity: 1,
-    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+    transition: { duration: 0.3, ease: EASE_OUT },
   },
   exit: (direction: number) => ({
     x: direction > 0 ? -24 : 24,
     opacity: 0,
-    transition: { duration: 0.2, ease: "easeIn" },
+    transition: { duration: 0.2, ease: "easeIn" as const },
   }),
 };
 
