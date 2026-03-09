@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { SavedScenario } from "./SavedScenarios";
-import { X, TableIcon, Minus, Plus } from "lucide-react";
+import { X, TableIcon, Minus, Plus, ArrowRight } from "lucide-react";
 
 interface ScenarioComparisonTableProps {
   scenarios: SavedScenario[];
@@ -32,16 +32,18 @@ function netImpact(dims: Record<string, number>, weights?: Record<string, number
   return total > 0 ? Math.round(sum / total) : 0;
 }
 
-function DeltaCell({ value }: { value: number }) {
-  const color = deltaColor(value);
+function DeltaCell({ value, base }: { value: number; base?: number }) {
+  // For whatif: show delta vs base. For weights or no base: show value
+  const delta = base !== undefined ? value - base : value;
+  const color = deltaColor(delta);
   return (
     <td className="px-3 py-2 text-center">
       <span
-        className="inline-flex items-center gap-0.5 text-[11px] font-mono font-bold"
+        className="inline-flex items-center justify-center gap-0.5 text-[11px] font-mono font-bold"
         style={{ color }}
       >
-        {value > 0 ? <Plus size={8} /> : value < 0 ? <Minus size={8} /> : null}
-        {Math.abs(value)}
+        {delta > 0 ? <Plus size={8} /> : delta < 0 ? <Minus size={8} /> : "="}
+        {delta !== 0 ? Math.abs(delta) : ""}
       </span>
     </td>
   );
@@ -63,10 +65,8 @@ function AbsCell({ value }: { value: number }) {
 export function ScenarioComparisonTable({ scenarios, onClose }: ScenarioComparisonTableProps) {
   const [mode, setMode] = useState<"absolute" | "delta">("absolute");
 
-  // Only show What-If scenarios for meaningful dimension comparison
   const whatifScenarios = scenarios.filter((s) => s.type === "whatif");
   const weightScenarios = scenarios.filter((s) => s.type === "weights");
-  const displayScenarios = scenarios; // show all
 
   if (scenarios.length === 0) {
     return (
@@ -147,8 +147,9 @@ export function ScenarioComparisonTable({ scenarios, onClose }: ScenarioComparis
             </tr>
           </thead>
           <tbody>
-            {displayScenarios.map((s, idx) => {
+            {scenarios.map((s, idx) => {
               const net = netImpact(s.dimensions, s.weights);
+              const baseNet = s.baseDimensions ? netImpact(s.baseDimensions) : null;
               return (
                 <tr
                   key={s.id}
@@ -172,17 +173,26 @@ export function ScenarioComparisonTable({ scenarios, onClose }: ScenarioComparis
 
                   {/* Net impact */}
                   <td className="px-3 py-3 text-center">
-                    <span className="text-sm font-mono font-bold" style={{ color: netColor(net) }}>
-                      {net > 0 ? "+" : ""}{net}
-                    </span>
+                    <div className="flex flex-col items-center">
+                      <span className="text-sm font-mono font-bold" style={{ color: netColor(net) }}>
+                        {net > 0 ? "+" : ""}{net}
+                      </span>
+                      {mode === "delta" && baseNet !== null && (
+                        <span className="text-[9px] font-mono flex items-center gap-0.5" style={{ color: deltaColor(net - baseNet) }}>
+                          <ArrowRight size={7} />
+                          {net - baseNet > 0 ? "+" : ""}{net - baseNet}
+                        </span>
+                      )}
+                    </div>
                   </td>
 
                   {/* Dimension values */}
                   {DIMENSIONS.map((d) => {
                     const val = s.dimensions[d.key] ?? 0;
+                    const baseVal = s.baseDimensions?.[d.key];
                     return mode === "absolute"
                       ? <AbsCell key={d.key} value={val} />
-                      : <DeltaCell key={d.key} value={val} />;
+                      : <DeltaCell key={d.key} value={val} base={baseVal} />;
                   })}
                 </tr>
               );
@@ -202,8 +212,11 @@ export function ScenarioComparisonTable({ scenarios, onClose }: ScenarioComparis
         <span>
           <span style={{ color: "hsl(var(--negative))" }}>■</span> Harmful (&lt;−20)
         </span>
+        {mode === "delta" && (
+          <span className="ml-auto text-muted-foreground/40">Δ = modified − base (What-If only)</span>
+        )}
         {whatifScenarios.length > 0 && weightScenarios.length > 0 && (
-          <span className="ml-auto">🔬 What-If · ⚖ Weights</span>
+          <span>🔬 What-If · ⚖ Weights</span>
         )}
       </div>
     </div>
