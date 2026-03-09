@@ -8,7 +8,7 @@ interface TemporalComparisonProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const CustomTooltip = ({ active, payload, label }: any) => {
+function CustomTooltip({ active, payload, label }: any) {
   if (active && payload && payload.length) {
     const val = payload[0].value;
     return (
@@ -21,7 +21,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
   }
   return null;
-};
+}
 
 export function TemporalComparison({ timeframes, dimensionKey, onDimensionChange }: TemporalComparisonProps) {
   const activeDim = DIMENSIONS.find((d) => d.key === dimensionKey) ?? DIMENSIONS[0];
