@@ -744,6 +744,34 @@ export function ExportReport({
             Atlas does not make the decision. It reveals the moral landscape.
           </p>
         </div>
+
+        {/* Journal reflections */}
+        {journalEntries.length > 0 && (
+          <div className="border border-primary/20 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-primary/5 border-b border-primary/15">
+              <BookOpen size={12} className="text-primary" />
+              <p className="text-[10px] font-mono uppercase tracking-widest text-primary">
+                Leader's Journal Reflections
+              </p>
+              <span className="text-[10px] font-mono bg-primary/15 text-primary px-1.5 py-0.5 rounded ml-auto">
+                {journalEntries.length} {journalEntries.length === 1 ? "entry" : "entries"}
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              {journalEntries.map((entry) => (
+                <div key={entry.id} className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3">
+                  <p className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                    {entry.text}
+                  </p>
+                  <p className="text-[9px] font-mono text-muted-foreground/40 mt-2">{entry.createdAt}</p>
+                </div>
+              ))}
+              <p className="text-[9px] font-mono text-muted-foreground/40 italic text-center pt-1">
+                Journal entries will appear as Page 3 in the PDF export.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
