@@ -77,6 +77,14 @@ export function ExportReport({
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
 
+  // Live-load journal entries for this dilemma
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() =>
+    loadJournalEntries(decision.id)
+  );
+  useEffect(() => {
+    setJournalEntries(loadJournalEntries(decision.id));
+  }, [decision.id]);
+
   const uniformNet = Math.round(
     Object.values(currentTimeframe.dimensions).reduce((a, b) => a + b, 0) / 6
   );
