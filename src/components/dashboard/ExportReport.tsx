@@ -1,7 +1,27 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
-import { X, Download, Copy, Check, FileImage } from "lucide-react";
+import { X, Download, Copy, Check, FileImage, BookOpen } from "lucide-react";
+
+interface JournalEntry {
+  id: string;
+  decisionId: string;
+  text: string;
+  createdAt: string;
+  timestamp: number;
+}
+
+function loadJournalEntries(decisionId: string): JournalEntry[] {
+  try {
+    const raw = localStorage.getItem("atlas-journal-entries");
+    const all: JournalEntry[] = raw ? JSON.parse(raw) : [];
+    return all
+      .filter((e) => e.decisionId === decisionId)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  } catch {
+    return [];
+  }
+}
 
 interface ExportReportProps {
   decision: Decision;
