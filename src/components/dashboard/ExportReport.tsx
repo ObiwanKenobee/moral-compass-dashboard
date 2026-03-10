@@ -161,6 +161,15 @@ export function ExportReport({
     lines.push("", thin, "  HISTORICAL ANALOGUES", thin);
     decision.historicalAnalogues.forEach((a) => lines.push(`  → ${a}`));
 
+    // Journal reflections
+    if (journalEntries.length > 0) {
+      lines.push("", thin, "  LEADER'S JOURNAL REFLECTIONS", thin);
+      journalEntries.forEach((entry) => {
+        lines.push(``, `  [${entry.createdAt}]`);
+        lines.push(`  ${entry.text}`);
+      });
+    }
+
     lines.push(
       "",
       divider,
