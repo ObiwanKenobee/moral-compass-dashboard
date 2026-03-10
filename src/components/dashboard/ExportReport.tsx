@@ -1,7 +1,27 @@
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
-import { X, Download, Copy, Check, FileImage } from "lucide-react";
+import { X, Download, Copy, Check, FileImage, BookOpen } from "lucide-react";
+
+interface JournalEntry {
+  id: string;
+  decisionId: string;
+  text: string;
+  createdAt: string;
+  timestamp: number;
+}
+
+function loadJournalEntries(decisionId: string): JournalEntry[] {
+  try {
+    const raw = localStorage.getItem("atlas-journal-entries");
+    const all: JournalEntry[] = raw ? JSON.parse(raw) : [];
+    return all
+      .filter((e) => e.decisionId === decisionId)
+      .sort((a, b) => b.timestamp - a.timestamp);
+  } catch {
+    return [];
+  }
+}
 
 interface ExportReportProps {
   decision: Decision;
@@ -56,6 +76,14 @@ export function ExportReport({
   const reportRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+
+  // Live-load journal entries for this dilemma
+  const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() =>
+    loadJournalEntries(decision.id)
+  );
+  useEffect(() => {
+    setJournalEntries(loadJournalEntries(decision.id));
+  }, [decision.id]);
 
   const uniformNet = Math.round(
     Object.values(currentTimeframe.dimensions).reduce((a, b) => a + b, 0) / 6
@@ -132,6 +160,15 @@ export function ExportReport({
 
     lines.push("", thin, "  HISTORICAL ANALOGUES", thin);
     decision.historicalAnalogues.forEach((a) => lines.push(`  → ${a}`));
+
+    // Journal reflections
+    if (journalEntries.length > 0) {
+      lines.push("", thin, "  LEADER'S JOURNAL REFLECTIONS", thin);
+      journalEntries.forEach((entry) => {
+        lines.push(``, `  [${entry.createdAt}]`);
+        lines.push(`  ${entry.text}`);
+      });
+    }
 
     lines.push(
       "",
@@ -472,6 +509,72 @@ export function ExportReport({
         y += 6;
       });
 
+      // ── Page 3: Leader's Journal (if entries exist) ──
+      if (journalEntries.length > 0) {
+        pdf.addPage();
+        pdf.setFillColor(14, 15, 20);
+        pdf.rect(0, 0, pageW, pageH, "F");
+        // Amber accent bar
+        pdf.setFillColor(245, 158, 11);
+        pdf.rect(0, 0, pageW, 3, "F");
+
+        y = margin + 8;
+
+        // Section header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.setTextColor(130, 140, 160);
+        pdf.text("LEADER'S JOURNAL REFLECTIONS", margin, y);
+        y += 4;
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(70, 82, 100);
+        pdf.text(`${journalEntries.length} reflection${journalEntries.length !== 1 ? "s" : ""} for ${decision.title}`, margin, y + 5);
+        y += 12;
+
+        pdf.setDrawColor(40, 48, 64);
+        pdf.setLineWidth(0.4);
+        pdf.line(margin, y, pageW - margin, y);
+        y += 8;
+
+        journalEntries.forEach((entry) => {
+          // Page break guard
+          if (y > pageH - 40) {
+            pdf.addPage();
+            pdf.setFillColor(14, 15, 20);
+            pdf.rect(0, 0, pageW, pageH, "F");
+            pdf.setFillColor(245, 158, 11);
+            pdf.rect(0, 0, pageW, 3, "F");
+            y = margin + 8;
+          }
+
+          // Entry card background
+          const entryLines = pdf.splitTextToSize(entry.text, contentW - 10);
+          const cardH = entryLines.length * 5 + 16;
+          pdf.setFillColor(22, 27, 38);
+          pdf.roundedRect(margin, y, contentW, cardH, 2, 2, "F");
+
+          // Left amber accent bar
+          pdf.setFillColor(245, 158, 11);
+          pdf.rect(margin, y + 4, 2, cardH - 8, "F");
+
+          // Timestamp
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(7);
+          pdf.setTextColor(70, 82, 100);
+          pdf.text(entry.createdAt, margin + 6, y + 8);
+
+          // Entry text
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(190, 198, 212);
+          pdf.text(entryLines, margin + 6, y + 15);
+
+          y += cardH + 5;
+        });
+      }
+
       // Footer
       y = pageH - 16;
       pdf.setDrawColor(40, 48, 64);
@@ -641,6 +744,34 @@ export function ExportReport({
             Atlas does not make the decision. It reveals the moral landscape.
           </p>
         </div>
+
+        {/* Journal reflections */}
+        {journalEntries.length > 0 && (
+          <div className="border border-primary/20 rounded-lg overflow-hidden">
+            <div className="flex items-center gap-2 px-4 py-3 bg-primary/5 border-b border-primary/15">
+              <BookOpen size={12} className="text-primary" />
+              <p className="text-[10px] font-mono uppercase tracking-widest text-primary">
+                Leader's Journal Reflections
+              </p>
+              <span className="text-[10px] font-mono bg-primary/15 text-primary px-1.5 py-0.5 rounded ml-auto">
+                {journalEntries.length} {journalEntries.length === 1 ? "entry" : "entries"}
+              </span>
+            </div>
+            <div className="p-4 space-y-3">
+              {journalEntries.map((entry) => (
+                <div key={entry.id} className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3">
+                  <p className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap">
+                    {entry.text}
+                  </p>
+                  <p className="text-[9px] font-mono text-muted-foreground/40 mt-2">{entry.createdAt}</p>
+                </div>
+              ))}
+              <p className="text-[9px] font-mono text-muted-foreground/40 italic text-center pt-1">
+                Journal entries will appear as Page 3 in the PDF export.
+              </p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
