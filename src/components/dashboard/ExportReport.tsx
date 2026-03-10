@@ -509,6 +509,72 @@ export function ExportReport({
         y += 6;
       });
 
+      // ── Page 3: Leader's Journal (if entries exist) ──
+      if (journalEntries.length > 0) {
+        pdf.addPage();
+        pdf.setFillColor(14, 15, 20);
+        pdf.rect(0, 0, pageW, pageH, "F");
+        // Amber accent bar
+        pdf.setFillColor(245, 158, 11);
+        pdf.rect(0, 0, pageW, 3, "F");
+
+        y = margin + 8;
+
+        // Section header
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(10);
+        pdf.setTextColor(130, 140, 160);
+        pdf.text("LEADER'S JOURNAL REFLECTIONS", margin, y);
+        y += 4;
+
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(70, 82, 100);
+        pdf.text(`${journalEntries.length} reflection${journalEntries.length !== 1 ? "s" : ""} for ${decision.title}`, margin, y + 5);
+        y += 12;
+
+        pdf.setDrawColor(40, 48, 64);
+        pdf.setLineWidth(0.4);
+        pdf.line(margin, y, pageW - margin, y);
+        y += 8;
+
+        journalEntries.forEach((entry) => {
+          // Page break guard
+          if (y > pageH - 40) {
+            pdf.addPage();
+            pdf.setFillColor(14, 15, 20);
+            pdf.rect(0, 0, pageW, pageH, "F");
+            pdf.setFillColor(245, 158, 11);
+            pdf.rect(0, 0, pageW, 3, "F");
+            y = margin + 8;
+          }
+
+          // Entry card background
+          const entryLines = pdf.splitTextToSize(entry.text, contentW - 10);
+          const cardH = entryLines.length * 5 + 16;
+          pdf.setFillColor(22, 27, 38);
+          pdf.roundedRect(margin, y, contentW, cardH, 2, 2, "F");
+
+          // Left amber accent bar
+          pdf.setFillColor(245, 158, 11);
+          pdf.rect(margin, y + 4, 2, cardH - 8, "F");
+
+          // Timestamp
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(7);
+          pdf.setTextColor(70, 82, 100);
+          pdf.text(entry.createdAt, margin + 6, y + 8);
+
+          // Entry text
+          pdf.setFont("helvetica", "normal");
+          pdf.setFontSize(8.5);
+          pdf.setTextColor(190, 198, 212);
+          pdf.text(entryLines, margin + 6, y + 15);
+
+          y += cardH + 5;
+        });
+      }
+
       // Footer
       y = pageH - 16;
       pdf.setDrawColor(40, 48, 64);
