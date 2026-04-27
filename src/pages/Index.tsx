@@ -468,6 +468,7 @@ export default function Index() {
                 decisionTitle={selected.title}
                 timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
                 onSave={handleSaveScenario}
+                initialWeights={weights}
               />
             </motion.div>
           )}
