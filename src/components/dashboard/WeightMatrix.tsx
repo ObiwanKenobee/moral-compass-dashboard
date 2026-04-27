@@ -12,6 +12,7 @@ interface WeightMatrixProps {
   decisionTitle: string;
   timeframeLabel: string;
   onSave: (scenario: Omit<SavedScenario, "id" | "createdAt">) => void;
+  initialWeights?: Record<string, number>;
 }
 
 const DEFAULT_WEIGHTS: Record<string, number> = {
