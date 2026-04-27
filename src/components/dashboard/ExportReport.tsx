@@ -593,10 +593,14 @@ export function ExportReport({
     setPdfLoading(false);
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
   return (
-    <div className="bg-card border border-border rounded-xl overflow-hidden animate-float-up" style={{ boxShadow: "var(--shadow-card)" }}>
+    <div className="bg-card border border-border rounded-xl overflow-hidden animate-float-up print-region" style={{ boxShadow: "var(--shadow-card)" }}>
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30 flex-wrap gap-2">
+      <div className="flex items-center justify-between px-5 py-4 border-b border-border bg-secondary/30 flex-wrap gap-2 no-print">
         <p className="font-mono text-xs tracking-widest uppercase text-primary">📋 Export Analysis Report</p>
         <div className="flex items-center gap-2 flex-wrap">
           <button
@@ -614,6 +618,14 @@ export function ExportReport({
             .txt
           </button>
           <button
+            onClick={handlePrint}
+            className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors"
+            title="Print or save via browser dialog"
+          >
+            <Printer size={12} />
+            Print
+          </button>
+          <button
             onClick={handleDownloadPDF}
             disabled={pdfLoading}
             className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 transition-colors disabled:opacity-50"
@@ -621,7 +633,7 @@ export function ExportReport({
             <FileImage size={12} />
             {pdfLoading ? "Generating…" : "Download PDF"}
           </button>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded">
+          <button onClick={onClose} className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded no-print">
             <X size={16} />
           </button>
         </div>
