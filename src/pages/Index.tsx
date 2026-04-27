@@ -351,6 +351,13 @@ export default function Index() {
             />
             <ToolButton active={activePanel === "export"} onClick={() => togglePanel("export")} icon={FileDown} label="Export" />
             <button
+              onClick={handleShare}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-primary"
+              title="Share scenario link (S)"
+            >
+              <Share2 size={12} />
+            </button>
+            <button
               onClick={() => setShowKbHelp((v) => !v)}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-secondary text-muted-foreground hover:text-foreground"
               title="Keyboard shortcuts (?)"
