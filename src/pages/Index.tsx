@@ -109,17 +109,45 @@ const cardVariants = {
   }),
 };
 
+// ── URL state helpers ──
+function parseUrlState() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const d = params.get("d");
+  const t = params.get("t");
+  const w = params.get("w");
+  const decision = d ? DECISIONS.find((x) => x.id === d) : undefined;
+  const tfIdx = t != null ? Math.max(0, Math.min(2, parseInt(t, 10) || 0)) : null;
+  let weights: Record<string, number> | null = null;
+  if (w) {
+    weights = Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]));
+    w.split(",").forEach((pair) => {
+      const [k, v] = pair.split(":");
+      const num = parseFloat(v);
+      if (k && weights && k in weights && !isNaN(num) && num >= 0 && num <= 5) {
+        weights[k] = num;
+      }
+    });
+  }
+  return { decision, tfIdx, weights };
+}
+
 export default function Index() {
-  const [selected, setSelected] = useState<Decision>(DECISIONS[0]);
-  const [prevSelectedId, setPrevSelectedId] = useState<string>(DECISIONS[0].id);
+  // Hydrate from URL on first render
+  const initial = parseUrlState();
+  const initialDecision = initial?.decision ?? DECISIONS[0];
+  const initialTf = initial?.tfIdx != null && initial.tfIdx < initialDecision.timeframes.length ? initial.tfIdx : 0;
+
+  const [selected, setSelected] = useState<Decision>(initialDecision);
+  const [prevSelectedId, setPrevSelectedId] = useState<string>(initialDecision.id);
   const [dilemmaDirection, setDilemmaDirection] = useState(0);
-  const [timeframeIdx, setTimeframeIdx] = useState(0);
+  const [timeframeIdx, setTimeframeIdx] = useState(initialTf);
   const [trackedDimension, setTrackedDimension] = useState("environment");
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [showKbHelp, setShowKbHelp] = useState(false);
 
   const [weights, setWeights] = useState<Record<string, number>>(
-    Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
+    initial?.weights ?? Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
   );
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
 
