@@ -12,6 +12,7 @@ interface WeightMatrixProps {
   decisionTitle: string;
   timeframeLabel: string;
   onSave: (scenario: Omit<SavedScenario, "id" | "createdAt">) => void;
+  initialWeights?: Record<string, number>;
 }
 
 const DEFAULT_WEIGHTS: Record<string, number> = {
@@ -48,8 +49,8 @@ function getWeightColor(w: number): string {
   return "hsl(var(--negative))";
 }
 
-export function WeightMatrix({ dimensions, onWeightsChange, onClose, decisionId, decisionTitle, timeframeLabel, onSave }: WeightMatrixProps) {
-  const [weights, setWeights] = useState<Record<string, number>>({ ...DEFAULT_WEIGHTS });
+export function WeightMatrix({ dimensions, onWeightsChange, onClose, decisionId, decisionTitle, timeframeLabel, onSave, initialWeights }: WeightMatrixProps) {
+  const [weights, setWeights] = useState<Record<string, number>>(() => ({ ...DEFAULT_WEIGHTS, ...(initialWeights ?? {}) }));
   const [showSaveDialog, setShowSaveDialog] = useState(false);
 
   const handleChange = (key: string, val: number) => {

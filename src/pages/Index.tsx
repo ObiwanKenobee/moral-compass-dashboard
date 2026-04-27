@@ -19,7 +19,8 @@ import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
 import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
 import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
-import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard } from "lucide-react";
+import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard, Share2 } from "lucide-react";
+import { toast } from "sonner";
 
 type MobileTab = "dilemma" | "radar" | "stakeholders" | "timeline";
 
@@ -108,17 +109,45 @@ const cardVariants = {
   }),
 };
 
+// ── URL state helpers ──
+function parseUrlState() {
+  if (typeof window === "undefined") return null;
+  const params = new URLSearchParams(window.location.search);
+  const d = params.get("d");
+  const t = params.get("t");
+  const w = params.get("w");
+  const decision = d ? DECISIONS.find((x) => x.id === d) : undefined;
+  const tfIdx = t != null ? Math.max(0, Math.min(2, parseInt(t, 10) || 0)) : null;
+  let weights: Record<string, number> | null = null;
+  if (w) {
+    weights = Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]));
+    w.split(",").forEach((pair) => {
+      const [k, v] = pair.split(":");
+      const num = parseFloat(v);
+      if (k && weights && k in weights && !isNaN(num) && num >= 0 && num <= 5) {
+        weights[k] = num;
+      }
+    });
+  }
+  return { decision, tfIdx, weights };
+}
+
 export default function Index() {
-  const [selected, setSelected] = useState<Decision>(DECISIONS[0]);
-  const [prevSelectedId, setPrevSelectedId] = useState<string>(DECISIONS[0].id);
+  // Hydrate from URL on first render
+  const initial = parseUrlState();
+  const initialDecision = initial?.decision ?? DECISIONS[0];
+  const initialTf = initial?.tfIdx != null && initial.tfIdx < initialDecision.timeframes.length ? initial.tfIdx : 0;
+
+  const [selected, setSelected] = useState<Decision>(initialDecision);
+  const [prevSelectedId, setPrevSelectedId] = useState<string>(initialDecision.id);
   const [dilemmaDirection, setDilemmaDirection] = useState(0);
-  const [timeframeIdx, setTimeframeIdx] = useState(0);
+  const [timeframeIdx, setTimeframeIdx] = useState(initialTf);
   const [trackedDimension, setTrackedDimension] = useState("environment");
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [showKbHelp, setShowKbHelp] = useState(false);
 
   const [weights, setWeights] = useState<Record<string, number>>(
-    Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
+    initial?.weights ?? Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
   );
   const [savedScenarios, setSavedScenarios] = useState<SavedScenario[]>([]);
 
@@ -159,36 +188,76 @@ export default function Index() {
     setSidebarOpen(false);
   }, [selected.id]);
 
+  // ── Sync state → URL (shareable) ──
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("d", selected.id);
+    params.set("t", String(timeframeIdx));
+    const customWeights = DIMENSIONS.filter((d) => (weights[d.key] ?? 1) !== 1);
+    if (customWeights.length > 0) {
+      params.set("w", customWeights.map((d) => `${d.key}:${weights[d.key]}`).join(","));
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [selected.id, timeframeIdx, weights]);
+
+  // ── Share Scenario handler ──
+  async function handleShare() {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      const customCount = DIMENSIONS.filter((d) => (weights[d.key] ?? 1) !== 1).length;
+      toast.success("Share link copied", {
+        description: `${selected.title} · ${selected.timeframes[timeframeIdx].label}${customCount > 0 ? ` · ${customCount} custom weight${customCount === 1 ? "" : "s"}` : ""}`,
+      });
+    } catch {
+      toast.error("Could not copy link to clipboard");
+    }
+  }
+
   // ── Keyboard Navigation ──
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      // Don't fire when typing in inputs/textareas
+      // Don't fire when typing in inputs/textareas, or with modifier keys
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const currentIdx = DECISIONS.findIndex((d) => d.id === selected.id);
       const maxTf = selected.timeframes.length - 1;
+      const k = e.key;
 
-      if (e.key === "Escape") {
+      if (k === "Escape") {
         setActivePanel(null);
         setShowKbHelp(false);
-      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      } else if (k === "ArrowUp" || k === "ArrowLeft") {
         if (currentIdx > 0) handleSelectDecision(DECISIONS[currentIdx - 1]);
-      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      } else if (k === "ArrowDown" || k === "ArrowRight") {
         if (currentIdx < DECISIONS.length - 1) handleSelectDecision(DECISIONS[currentIdx + 1]);
-      } else if (e.key === "1") {
+      } else if (k === "1") {
         setTimeframeIdx(0);
-      } else if (e.key === "2") {
+      } else if (k === "2") {
         if (maxTf >= 1) setTimeframeIdx(1);
-      } else if (e.key === "3") {
+      } else if (k === "3") {
         if (maxTf >= 2) setTimeframeIdx(2);
-      } else if (e.key === "?") {
+      } else if (k === "?") {
         setShowKbHelp((v) => !v);
+      } else if (k === "j" || k === "J") {
+        setActivePanel((p) => (p === "journal" ? null : "journal"));
+      } else if (k === "e" || k === "E") {
+        setActivePanel((p) => (p === "export" ? null : "export"));
+      } else if (k === "h" || k === "H") {
+        setActivePanel((p) => (p === "heatmap" ? null : "heatmap"));
+      } else if (k === "s" || k === "S") {
+        e.preventDefault();
+        handleShare();
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [selected, handleSelectDecision]);
+    // handleShare depends on selected/timeframeIdx/weights which are captured fresh each render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, handleSelectDecision, timeframeIdx, weights]);
 
   function togglePanel(p: ActivePanel) {
     setActivePanel((prev) => (prev === p ? null : p));
@@ -281,6 +350,13 @@ export default function Index() {
               badge={journalCount > 0 ? journalCount : undefined}
             />
             <ToolButton active={activePanel === "export"} onClick={() => togglePanel("export")} icon={FileDown} label="Export" />
+            <button
+              onClick={handleShare}
+              className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-primary/50 text-muted-foreground hover:text-primary"
+              title="Share scenario link (S)"
+            >
+              <Share2 size={12} />
+            </button>
             <button
               onClick={() => setShowKbHelp((v) => !v)}
               className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-mono transition-all duration-200 border border-border bg-card hover:border-secondary text-muted-foreground hover:text-foreground"
@@ -392,6 +468,7 @@ export default function Index() {
                 decisionTitle={selected.title}
                 timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
                 onSave={handleSaveScenario}
+                initialWeights={weights}
               />
             </motion.div>
           )}
@@ -709,6 +786,10 @@ export default function Index() {
                   { keys: ["↑", "↓"], label: "Previous / Next dilemma" },
                   { keys: ["←", "→"], label: "Previous / Next dilemma" },
                   { keys: ["1", "2", "3"], label: "Switch timeframe (Immediate / Short / Long)" },
+                  { keys: ["J"], label: "Toggle Journal panel" },
+                  { keys: ["E"], label: "Toggle Export panel" },
+                  { keys: ["H"], label: "Toggle Heatmap panel" },
+                  { keys: ["S"], label: "Share scenario (copy URL)" },
                   { keys: ["Esc"], label: "Close active panel" },
                   { keys: ["?"], label: "Toggle this help" },
                 ].map((item) => (
