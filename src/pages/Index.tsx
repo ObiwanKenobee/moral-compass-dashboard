@@ -188,36 +188,76 @@ export default function Index() {
     setSidebarOpen(false);
   }, [selected.id]);
 
+  // ── Sync state → URL (shareable) ──
+  useEffect(() => {
+    const params = new URLSearchParams();
+    params.set("d", selected.id);
+    params.set("t", String(timeframeIdx));
+    const customWeights = DIMENSIONS.filter((d) => (weights[d.key] ?? 1) !== 1);
+    if (customWeights.length > 0) {
+      params.set("w", customWeights.map((d) => `${d.key}:${weights[d.key]}`).join(","));
+    }
+    const newUrl = `${window.location.pathname}?${params.toString()}`;
+    window.history.replaceState(null, "", newUrl);
+  }, [selected.id, timeframeIdx, weights]);
+
+  // ── Share Scenario handler ──
+  async function handleShare() {
+    const url = window.location.href;
+    try {
+      await navigator.clipboard.writeText(url);
+      const customCount = DIMENSIONS.filter((d) => (weights[d.key] ?? 1) !== 1).length;
+      toast.success("Share link copied", {
+        description: `${selected.title} · ${selected.timeframes[timeframeIdx].label}${customCount > 0 ? ` · ${customCount} custom weight${customCount === 1 ? "" : "s"}` : ""}`,
+      });
+    } catch {
+      toast.error("Could not copy link to clipboard");
+    }
+  }
+
   // ── Keyboard Navigation ──
   useEffect(() => {
     function handleKey(e: KeyboardEvent) {
-      // Don't fire when typing in inputs/textareas
+      // Don't fire when typing in inputs/textareas, or with modifier keys
       const tag = (e.target as HTMLElement).tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (e.metaKey || e.ctrlKey || e.altKey) return;
 
       const currentIdx = DECISIONS.findIndex((d) => d.id === selected.id);
       const maxTf = selected.timeframes.length - 1;
+      const k = e.key;
 
-      if (e.key === "Escape") {
+      if (k === "Escape") {
         setActivePanel(null);
         setShowKbHelp(false);
-      } else if (e.key === "ArrowUp" || e.key === "ArrowLeft") {
+      } else if (k === "ArrowUp" || k === "ArrowLeft") {
         if (currentIdx > 0) handleSelectDecision(DECISIONS[currentIdx - 1]);
-      } else if (e.key === "ArrowDown" || e.key === "ArrowRight") {
+      } else if (k === "ArrowDown" || k === "ArrowRight") {
         if (currentIdx < DECISIONS.length - 1) handleSelectDecision(DECISIONS[currentIdx + 1]);
-      } else if (e.key === "1") {
+      } else if (k === "1") {
         setTimeframeIdx(0);
-      } else if (e.key === "2") {
+      } else if (k === "2") {
         if (maxTf >= 1) setTimeframeIdx(1);
-      } else if (e.key === "3") {
+      } else if (k === "3") {
         if (maxTf >= 2) setTimeframeIdx(2);
-      } else if (e.key === "?") {
+      } else if (k === "?") {
         setShowKbHelp((v) => !v);
+      } else if (k === "j" || k === "J") {
+        setActivePanel((p) => (p === "journal" ? null : "journal"));
+      } else if (k === "e" || k === "E") {
+        setActivePanel((p) => (p === "export" ? null : "export"));
+      } else if (k === "h" || k === "H") {
+        setActivePanel((p) => (p === "heatmap" ? null : "heatmap"));
+      } else if (k === "s" || k === "S") {
+        e.preventDefault();
+        handleShare();
       }
     }
     window.addEventListener("keydown", handleKey);
     return () => window.removeEventListener("keydown", handleKey);
-  }, [selected, handleSelectDecision]);
+    // handleShare depends on selected/timeframeIdx/weights which are captured fresh each render
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selected, handleSelectDecision, timeframeIdx, weights]);
 
   function togglePanel(p: ActivePanel) {
     setActivePanel((prev) => (prev === p ? null : p));
