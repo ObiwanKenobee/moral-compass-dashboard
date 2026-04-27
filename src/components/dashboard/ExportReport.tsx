@@ -1,7 +1,7 @@
 import { useRef, useState, useEffect } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
-import { X, Download, Copy, Check, FileImage, BookOpen } from "lucide-react";
+import { X, Download, Copy, Check, FileImage, BookOpen, Printer } from "lucide-react";
 
 interface JournalEntry {
   id: string;
