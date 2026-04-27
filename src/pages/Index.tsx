@@ -786,6 +786,10 @@ export default function Index() {
                   { keys: ["↑", "↓"], label: "Previous / Next dilemma" },
                   { keys: ["←", "→"], label: "Previous / Next dilemma" },
                   { keys: ["1", "2", "3"], label: "Switch timeframe (Immediate / Short / Long)" },
+                  { keys: ["J"], label: "Toggle Journal panel" },
+                  { keys: ["E"], label: "Toggle Export panel" },
+                  { keys: ["H"], label: "Toggle Heatmap panel" },
+                  { keys: ["S"], label: "Share scenario (copy URL)" },
                   { keys: ["Esc"], label: "Close active panel" },
                   { keys: ["?"], label: "Toggle this help" },
                 ].map((item) => (
