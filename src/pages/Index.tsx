@@ -19,7 +19,7 @@ import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
 import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
 import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
-import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard, Share2, Check } from "lucide-react";
+import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
 type MobileTab = "dilemma" | "radar" | "stakeholders" | "timeline";
