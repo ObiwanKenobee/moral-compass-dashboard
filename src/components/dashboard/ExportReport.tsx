@@ -801,6 +801,26 @@ export function ExportReport({
               </span>
             </div>
             <div className="p-4 space-y-3">
+              {/* Weights snapshot */}
+              <div className="bg-muted/30 rounded-lg px-3 py-2">
+                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5">
+                  Weights snapshot at export
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {DIMENSIONS.map((d) => {
+                    const w = weights ? (weights[d.key] ?? 1) : 1;
+                    const isCustom = w !== 1;
+                    return (
+                      <span
+                        key={d.key}
+                        className={`text-[10px] font-mono ${isCustom ? "text-primary font-bold" : "text-muted-foreground"}`}
+                      >
+                        {d.icon} {d.label} {w}×
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
               {journalEntries.map((entry) => (
                 <div key={entry.id} className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3">
                   <p className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap">
