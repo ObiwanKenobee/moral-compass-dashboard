@@ -226,15 +226,62 @@ export default function Index() {
 
   // ── Keyboard Navigation ──
   useEffect(() => {
+    function isInteractiveTarget(el: EventTarget | null): boolean {
+      if (!el || !(el instanceof Element)) return false;
+      // Walk up the DOM — focus inside a descendant of an interactive element
+      // (e.g. icon inside a button) should still be treated as interactive.
+      const interactiveTags = new Set([
+        "INPUT",
+        "TEXTAREA",
+        "SELECT",
+        "BUTTON",
+        "A",
+        "AUDIO",
+        "VIDEO",
+        "SUMMARY",
+        "OPTION",
+      ]);
+      let node: Element | null = el;
+      while (node && node !== document.body) {
+        if (interactiveTags.has(node.tagName)) return true;
+        if ((node as HTMLElement).isContentEditable) return true;
+        const role = node.getAttribute("role");
+        if (role) {
+          const interactiveRoles = [
+            "button",
+            "link",
+            "checkbox",
+            "radio",
+            "menuitem",
+            "menuitemcheckbox",
+            "menuitemradio",
+            "option",
+            "switch",
+            "tab",
+            "textbox",
+            "combobox",
+            "searchbox",
+            "slider",
+            "spinbutton",
+          ];
+          if (interactiveRoles.includes(role)) return true;
+        }
+        // tabindex >= 0 implies the element is keyboard-focusable / interactive
+        const tabindex = node.getAttribute("tabindex");
+        if (tabindex && parseInt(tabindex, 10) >= 0) return true;
+        node = node.parentElement;
+      }
+      return false;
+    }
+
     function handleKey(e: KeyboardEvent) {
-      // Don't fire when typing in inputs/textareas, or with modifier keys
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Always allow Escape to close panels regardless of focus.
+      const k = e.key;
+      if (k !== "Escape" && isInteractiveTarget(e.target)) return;
 
       const currentIdx = DECISIONS.findIndex((d) => d.id === selected.id);
       const maxTf = selected.timeframes.length - 1;
-      const k = e.key;
 
       if (k === "Escape") {
         setActivePanel(null);
