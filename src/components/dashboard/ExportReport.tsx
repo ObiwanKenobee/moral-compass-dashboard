@@ -649,9 +649,9 @@ export function ExportReport({
             .txt
           </button>
           <button
-            onClick={handlePrint}
+            onClick={handleOpenPrintPreview}
             className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors"
-            title="Print or save via browser dialog"
+            title="Open print preview"
           >
             <Printer size={12} />
             Print
