@@ -504,6 +504,21 @@ export default function Index() {
 
       <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-4 lg:py-6">
 
+        {/* ── Shared View Banner ── */}
+        <AnimatePresence>
+          {sharedBannerOpen && (
+            <SharedViewBanner
+              key="shared-banner"
+              decisionTitle={selected.title}
+              timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
+              weights={weights}
+              hasCustomWeights={hasCustomWeights}
+              onReset={handleResetSharedView}
+              onDismiss={() => setSharedBannerOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
         {/* ── Feature Panels (all animated) ── */}
         <AnimatePresence mode="wait">
           {activePanel === "compare" && (
