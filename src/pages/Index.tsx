@@ -138,6 +138,13 @@ export default function Index() {
   const initial = parseUrlState();
   const initialDecision = initial?.decision ?? DECISIONS[0];
   const initialTf = initial?.tfIdx != null && initial.tfIdx < initialDecision.timeframes.length ? initial.tfIdx : 0;
+  // Detect whether the URL actually carried sharable params (banner trigger)
+  const initialHasShared =
+    typeof window !== "undefined" &&
+    (() => {
+      const p = new URLSearchParams(window.location.search);
+      return p.has("d") || p.has("t") || p.has("w");
+    })();
 
   const [selected, setSelected] = useState<Decision>(initialDecision);
   const [prevSelectedId, setPrevSelectedId] = useState<string>(initialDecision.id);
@@ -146,6 +153,7 @@ export default function Index() {
   const [trackedDimension, setTrackedDimension] = useState("environment");
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [showKbHelp, setShowKbHelp] = useState(false);
+  const [sharedBannerOpen, setSharedBannerOpen] = useState(initialHasShared);
 
   const [weights, setWeights] = useState<Record<string, number>>(
     initial?.weights ?? Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
