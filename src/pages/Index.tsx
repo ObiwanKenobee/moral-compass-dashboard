@@ -335,6 +335,15 @@ export default function Index() {
     setSavedScenarios((prev) => prev.filter((s) => s.id !== id));
   }
 
+  function handleResetSharedView() {
+    setSelected(DECISIONS[0]);
+    setTimeframeIdx(0);
+    setWeights(Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1])));
+    setSharedBannerOpen(false);
+    setActivePanel(null);
+    toast.success("Reset to default view");
+  }
+
   const MOBILE_TABS: { id: MobileTab; label: string }[] = [
     { id: "dilemma", label: "Dilemma" },
     { id: "radar", label: "Impact" },
