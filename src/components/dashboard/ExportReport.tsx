@@ -618,8 +618,14 @@ export function ExportReport({
     setPdfLoading(false);
   }
 
-  function handlePrint() {
-    window.print();
+  function handleOpenPrintPreview() {
+    setShowPrintPreview(true);
+  }
+
+  function handleConfirmPrint() {
+    setShowPrintPreview(false);
+    // Allow modal to unmount before invoking the browser print dialog
+    setTimeout(() => window.print(), 50);
   }
 
   return (
