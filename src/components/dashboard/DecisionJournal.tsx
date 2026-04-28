@@ -44,7 +44,7 @@ function formatTs(ts: number): string {
   });
 }
 
-export function DecisionJournal({ decision, onClose }: DecisionJournalProps) {
+export function DecisionJournal({ decision, onClose, currentWeights }: DecisionJournalProps) {
   const [allEntries, setAllEntries] = useState<JournalEntry[]>(loadEntries);
   const [draft, setDraft] = useState("");
   const [filter, setFilter] = useState<"this" | "all">("this");
