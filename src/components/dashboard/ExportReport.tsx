@@ -166,6 +166,13 @@ export function ExportReport({
     // Journal reflections
     if (journalEntries.length > 0) {
       lines.push("", thin, "  LEADER'S JOURNAL REFLECTIONS", thin);
+      // Weights snapshot — captured at export time so reflections can be read
+      // in the context of the value system the leader was operating under.
+      lines.push("", "  Weights snapshot at export:");
+      DIMENSIONS.forEach((d) => {
+        const w = weights ? (weights[d.key] ?? 1) : 1;
+        lines.push(`    ${d.icon} ${d.label.padEnd(20)} ${w}×`);
+      });
       journalEntries.forEach((entry) => {
         lines.push(``, `  [${entry.createdAt}]`);
         lines.push(`  ${entry.text}`);
