@@ -594,6 +594,7 @@ export default function Index() {
               <DecisionJournal
                 decision={selected}
                 onClose={() => setActivePanel(null)}
+                currentWeights={weights}
               />
             </motion.div>
           )}
