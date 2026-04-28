@@ -19,6 +19,7 @@ import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
 import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
 import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
+import { SharedViewBanner } from "@/components/dashboard/SharedViewBanner";
 import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
