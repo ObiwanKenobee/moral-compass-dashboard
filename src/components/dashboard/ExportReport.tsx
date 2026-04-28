@@ -545,7 +545,23 @@ export function ExportReport({
         pdf.setDrawColor(40, 48, 64);
         pdf.setLineWidth(0.4);
         pdf.line(margin, y, pageW - margin, y);
-        y += 8;
+        y += 6;
+
+        // Weights snapshot strip
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(130, 140, 160);
+        pdf.text("WEIGHTS SNAPSHOT", margin, y);
+        y += 5;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(180, 190, 205);
+        const weightStr = DIMENSIONS
+          .map((d) => `${d.label} ${weights ? (weights[d.key] ?? 1) : 1}×`)
+          .join("   ·   ");
+        const wLines = pdf.splitTextToSize(weightStr, contentW);
+        pdf.text(wLines, margin, y);
+        y += wLines.length * 4 + 4;
 
         journalEntries.forEach((entry) => {
           // Page break guard
