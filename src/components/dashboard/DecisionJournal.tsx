@@ -94,6 +94,27 @@ export function DecisionJournal({ decision, onClose, currentWeights }: DecisionJ
       "═".repeat(60),
       "",
     ];
+
+    // Weights snapshot — captured at export time so reflections can be read in
+    // the context of the value system the leader was operating under.
+    if (currentWeights) {
+      const customCount = DIMENSIONS.filter(
+        (d) => (currentWeights[d.key] ?? 1) !== 1
+      ).length;
+      lines.push(
+        "  CURRENT WEIGHTS SNAPSHOT",
+        "  " + "─".repeat(58),
+      );
+      DIMENSIONS.forEach((d) => {
+        const w = currentWeights[d.key] ?? 1;
+        lines.push(`    ${d.icon} ${d.label.padEnd(20)} ${w}×`);
+      });
+      lines.push(
+        `  (${customCount === 0 ? "all default (1×)" : `${customCount} custom weight${customCount === 1 ? "" : "s"} active`})`,
+        "",
+      );
+    }
+
     const sorted = [...exportEntries].sort((a, b) => b.timestamp - a.timestamp);
     sorted.forEach((e) => {
       lines.push(`  [${e.createdAt}]`);
