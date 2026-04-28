@@ -816,6 +816,15 @@ export function ExportReport({
           </div>
         )}
       </div>
+
+      {/* Print Preview modal */}
+      {showPrintPreview && (
+        <PrintPreviewModal
+          journalCount={journalEntries.length}
+          onClose={() => setShowPrintPreview(false)}
+          onConfirmPrint={handleConfirmPrint}
+        />
+      )}
     </div>
   );
 }
