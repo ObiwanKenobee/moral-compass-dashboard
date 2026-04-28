@@ -19,6 +19,7 @@ import { MoralCompass } from "@/components/dashboard/MoralCompass";
 import { ScenarioComparisonTable } from "@/components/dashboard/ScenarioComparisonTable";
 import { TensionHeatmap } from "@/components/dashboard/TensionHeatmap";
 import { DecisionJournal, useJournalCount } from "@/components/dashboard/DecisionJournal";
+import { SharedViewBanner } from "@/components/dashboard/SharedViewBanner";
 import { Menu, X, GitCompare, FlaskConical, Scale, ChevronLeft, Bookmark, FileDown, Compass, TableIcon, Grid3X3, BookOpen, Keyboard, Share2 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -137,6 +138,13 @@ export default function Index() {
   const initial = parseUrlState();
   const initialDecision = initial?.decision ?? DECISIONS[0];
   const initialTf = initial?.tfIdx != null && initial.tfIdx < initialDecision.timeframes.length ? initial.tfIdx : 0;
+  // Detect whether the URL actually carried sharable params (banner trigger)
+  const initialHasShared =
+    typeof window !== "undefined" &&
+    (() => {
+      const p = new URLSearchParams(window.location.search);
+      return p.has("d") || p.has("t") || p.has("w");
+    })();
 
   const [selected, setSelected] = useState<Decision>(initialDecision);
   const [prevSelectedId, setPrevSelectedId] = useState<string>(initialDecision.id);
@@ -145,6 +153,7 @@ export default function Index() {
   const [trackedDimension, setTrackedDimension] = useState("environment");
   const [activePanel, setActivePanel] = useState<ActivePanel>(null);
   const [showKbHelp, setShowKbHelp] = useState(false);
+  const [sharedBannerOpen, setSharedBannerOpen] = useState(initialHasShared);
 
   const [weights, setWeights] = useState<Record<string, number>>(
     initial?.weights ?? Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1]))
@@ -217,15 +226,62 @@ export default function Index() {
 
   // ── Keyboard Navigation ──
   useEffect(() => {
+    function isInteractiveTarget(el: EventTarget | null): boolean {
+      if (!el || !(el instanceof Element)) return false;
+      // Walk up the DOM — focus inside a descendant of an interactive element
+      // (e.g. icon inside a button) should still be treated as interactive.
+      const interactiveTags = new Set([
+        "INPUT",
+        "TEXTAREA",
+        "SELECT",
+        "BUTTON",
+        "A",
+        "AUDIO",
+        "VIDEO",
+        "SUMMARY",
+        "OPTION",
+      ]);
+      let node: Element | null = el;
+      while (node && node !== document.body) {
+        if (interactiveTags.has(node.tagName)) return true;
+        if ((node as HTMLElement).isContentEditable) return true;
+        const role = node.getAttribute("role");
+        if (role) {
+          const interactiveRoles = [
+            "button",
+            "link",
+            "checkbox",
+            "radio",
+            "menuitem",
+            "menuitemcheckbox",
+            "menuitemradio",
+            "option",
+            "switch",
+            "tab",
+            "textbox",
+            "combobox",
+            "searchbox",
+            "slider",
+            "spinbutton",
+          ];
+          if (interactiveRoles.includes(role)) return true;
+        }
+        // tabindex >= 0 implies the element is keyboard-focusable / interactive
+        const tabindex = node.getAttribute("tabindex");
+        if (tabindex && parseInt(tabindex, 10) >= 0) return true;
+        node = node.parentElement;
+      }
+      return false;
+    }
+
     function handleKey(e: KeyboardEvent) {
-      // Don't fire when typing in inputs/textareas, or with modifier keys
-      const tag = (e.target as HTMLElement).tagName;
-      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
+      // Always allow Escape to close panels regardless of focus.
+      const k = e.key;
+      if (k !== "Escape" && isInteractiveTarget(e.target)) return;
 
       const currentIdx = DECISIONS.findIndex((d) => d.id === selected.id);
       const maxTf = selected.timeframes.length - 1;
-      const k = e.key;
 
       if (k === "Escape") {
         setActivePanel(null);
@@ -277,6 +333,15 @@ export default function Index() {
 
   function handleDeleteScenario(id: string) {
     setSavedScenarios((prev) => prev.filter((s) => s.id !== id));
+  }
+
+  function handleResetSharedView() {
+    setSelected(DECISIONS[0]);
+    setTimeframeIdx(0);
+    setWeights(Object.fromEntries(DIMENSIONS.map((d) => [d.key, 1])));
+    setSharedBannerOpen(false);
+    setActivePanel(null);
+    toast.success("Reset to default view");
   }
 
   const MOBILE_TABS: { id: MobileTab; label: string }[] = [
@@ -439,6 +504,21 @@ export default function Index() {
 
       <div className="max-w-[1600px] mx-auto px-4 lg:px-6 py-4 lg:py-6">
 
+        {/* ── Shared View Banner ── */}
+        <AnimatePresence>
+          {sharedBannerOpen && (
+            <SharedViewBanner
+              key="shared-banner"
+              decisionTitle={selected.title}
+              timeframeLabel={`${currentTimeframe.label} · ${currentTimeframe.years}`}
+              weights={weights}
+              hasCustomWeights={hasCustomWeights}
+              onReset={handleResetSharedView}
+              onDismiss={() => setSharedBannerOpen(false)}
+            />
+          )}
+        </AnimatePresence>
+
         {/* ── Feature Panels (all animated) ── */}
         <AnimatePresence mode="wait">
           {activePanel === "compare" && (
@@ -514,6 +594,7 @@ export default function Index() {
               <DecisionJournal
                 decision={selected}
                 onClose={() => setActivePanel(null)}
+                currentWeights={weights}
               />
             </motion.div>
           )}

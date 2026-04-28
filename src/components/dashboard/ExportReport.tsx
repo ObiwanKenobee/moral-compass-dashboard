@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
 import { X, Download, Copy, Check, FileImage, BookOpen, Printer } from "lucide-react";
+import { PrintPreviewModal } from "./PrintPreviewModal";
 
 interface JournalEntry {
   id: string;
@@ -76,6 +77,7 @@ export function ExportReport({
   const reportRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Live-load journal entries for this dilemma
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() =>
@@ -164,6 +166,13 @@ export function ExportReport({
     // Journal reflections
     if (journalEntries.length > 0) {
       lines.push("", thin, "  LEADER'S JOURNAL REFLECTIONS", thin);
+      // Weights snapshot — captured at export time so reflections can be read
+      // in the context of the value system the leader was operating under.
+      lines.push("", "  Weights snapshot at export:");
+      DIMENSIONS.forEach((d) => {
+        const w = weights ? (weights[d.key] ?? 1) : 1;
+        lines.push(`    ${d.icon} ${d.label.padEnd(20)} ${w}×`);
+      });
       journalEntries.forEach((entry) => {
         lines.push(``, `  [${entry.createdAt}]`);
         lines.push(`  ${entry.text}`);
@@ -536,7 +545,23 @@ export function ExportReport({
         pdf.setDrawColor(40, 48, 64);
         pdf.setLineWidth(0.4);
         pdf.line(margin, y, pageW - margin, y);
-        y += 8;
+        y += 6;
+
+        // Weights snapshot strip
+        pdf.setFont("helvetica", "bold");
+        pdf.setFontSize(7);
+        pdf.setTextColor(130, 140, 160);
+        pdf.text("WEIGHTS SNAPSHOT", margin, y);
+        y += 5;
+        pdf.setFont("helvetica", "normal");
+        pdf.setFontSize(7);
+        pdf.setTextColor(180, 190, 205);
+        const weightStr = DIMENSIONS
+          .map((d) => `${d.label} ${weights ? (weights[d.key] ?? 1) : 1}×`)
+          .join("   ·   ");
+        const wLines = pdf.splitTextToSize(weightStr, contentW);
+        pdf.text(wLines, margin, y);
+        y += wLines.length * 4 + 4;
 
         journalEntries.forEach((entry) => {
           // Page break guard
@@ -593,8 +618,14 @@ export function ExportReport({
     setPdfLoading(false);
   }
 
-  function handlePrint() {
-    window.print();
+  function handleOpenPrintPreview() {
+    setShowPrintPreview(true);
+  }
+
+  function handleConfirmPrint() {
+    setShowPrintPreview(false);
+    // Allow modal to unmount before invoking the browser print dialog
+    setTimeout(() => window.print(), 50);
   }
 
   return (
@@ -618,9 +649,9 @@ export function ExportReport({
             .txt
           </button>
           <button
-            onClick={handlePrint}
+            onClick={handleOpenPrintPreview}
             className="flex items-center gap-1.5 text-[11px] font-mono px-3 py-1.5 rounded border border-border text-muted-foreground hover:text-foreground hover:border-secondary transition-colors"
-            title="Print or save via browser dialog"
+            title="Open print preview"
           >
             <Printer size={12} />
             Print
@@ -770,6 +801,26 @@ export function ExportReport({
               </span>
             </div>
             <div className="p-4 space-y-3">
+              {/* Weights snapshot */}
+              <div className="bg-muted/30 rounded-lg px-3 py-2">
+                <p className="text-[9px] font-mono uppercase tracking-widest text-muted-foreground mb-1.5">
+                  Weights snapshot at export
+                </p>
+                <div className="flex flex-wrap gap-x-3 gap-y-1">
+                  {DIMENSIONS.map((d) => {
+                    const w = weights ? (weights[d.key] ?? 1) : 1;
+                    const isCustom = w !== 1;
+                    return (
+                      <span
+                        key={d.key}
+                        className={`text-[10px] font-mono ${isCustom ? "text-primary font-bold" : "text-muted-foreground"}`}
+                      >
+                        {d.icon} {d.label} {w}×
+                      </span>
+                    );
+                  })}
+                </div>
+              </div>
               {journalEntries.map((entry) => (
                 <div key={entry.id} className="bg-primary/5 border border-primary/15 rounded-lg px-4 py-3">
                   <p className="text-xs font-mono text-foreground/90 leading-relaxed whitespace-pre-wrap">
@@ -785,6 +836,15 @@ export function ExportReport({
           </div>
         )}
       </div>
+
+      {/* Print Preview modal */}
+      {showPrintPreview && (
+        <PrintPreviewModal
+          journalCount={journalEntries.length}
+          onClose={() => setShowPrintPreview(false)}
+          onConfirmPrint={handleConfirmPrint}
+        />
+      )}
     </div>
   );
 }
