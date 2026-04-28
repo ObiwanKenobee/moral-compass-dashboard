@@ -77,6 +77,7 @@ export function ExportReport({
   const reportRef = useRef<HTMLDivElement>(null);
   const [copied, setCopied] = useState(false);
   const [pdfLoading, setPdfLoading] = useState(false);
+  const [showPrintPreview, setShowPrintPreview] = useState(false);
 
   // Live-load journal entries for this dilemma
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>(() =>
