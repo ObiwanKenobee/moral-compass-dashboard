@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { X, BookOpen, Plus, Trash2, Download } from "lucide-react";
 import type { Decision } from "@/data/decisions";
+import { DIMENSIONS } from "@/data/decisions";
 
 interface JournalEntry {
   id: string;
@@ -13,6 +14,8 @@ interface JournalEntry {
 interface DecisionJournalProps {
   decision: Decision;
   onClose: () => void;
+  /** Optional snapshot of the user's current weight settings, included in exports. */
+  currentWeights?: Record<string, number>;
 }
 
 const STORAGE_KEY = "atlas-journal-entries";
