@@ -2,6 +2,7 @@ import { useRef, useState, useEffect } from "react";
 import { DIMENSIONS } from "@/data/decisions";
 import type { Decision, TimeframeData } from "@/data/decisions";
 import { X, Download, Copy, Check, FileImage, BookOpen, Printer } from "lucide-react";
+import { PrintPreviewModal } from "./PrintPreviewModal";
 
 interface JournalEntry {
   id: string;
