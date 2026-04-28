@@ -14,24 +14,27 @@ describe("Index — shared URL hydration", () => {
   const SHARED_TF_IDX = 2; // Long-Term — non-default
   const SHARED_WEIGHTS = "equity:3,wellbeing:2";
 
-  const originalLocation = window.location;
+  const originalSearch = window.location.search;
+  const originalHref = window.location.href;
+  const sharedSearch = `?d=${SHARED.id}&t=${SHARED_TF_IDX}&w=${SHARED_WEIGHTS}`;
 
   beforeEach(() => {
-    // jsdom doesn't allow direct mutation of location.search reliably;
-    // delete + redefine works.
-    // @ts-expect-error — overriding read-only location for the test
-    delete window.location;
-    window.location = {
-      ...originalLocation,
-      pathname: "/",
-      search: `?d=${SHARED.id}&t=${SHARED_TF_IDX}&w=${SHARED_WEIGHTS}`,
-      href: `http://localhost/?d=${SHARED.id}&t=${SHARED_TF_IDX}&w=${SHARED_WEIGHTS}`,
-    } as Location;
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: {
+        ...window.location,
+        pathname: "/",
+        search: sharedSearch,
+        href: `http://localhost/${sharedSearch}`,
+      },
+    });
   });
 
   afterEach(() => {
-    // @ts-expect-error — restore original
-    window.location = originalLocation;
+    Object.defineProperty(window, "location", {
+      writable: true,
+      value: { ...window.location, search: originalSearch, href: originalHref },
+    });
   });
 
   it("hydrates dilemma, timeframe, and weight sliders from the URL", async () => {
